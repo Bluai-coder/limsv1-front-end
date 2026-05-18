@@ -1,0 +1,519 @@
+
+
+"use client";
+
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+
+import {
+  LayoutDashboard, Users, FileText, ClipboardList,
+  FlaskConical, TestTubes, Settings, Shield,
+  Lock, LogOut, Menu, X, PanelLeftClose,
+  TestTube,
+  IndianRupee,
+  Workflow,
+  ChevronDown,
+  ChevronRight,
+  UserCog,
+  Beaker,
+  Microscope,
+  Activity,
+  FileSignature,
+  Bell,
+  Search,
+  Sun,
+  Moon,
+  Database,
+  BarChart3
+} from "lucide-react";
+
+import { useAuthStore } from "@/lib/auth-store";
+import Image from "next/image";
+
+// ================= MENU CONFIGURATION =================
+const menuItems = [
+  {
+    section: "CORE",
+    icon: Database,
+    items: [
+      { name: "Dashboard", module: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+      { name: "Patients", module: "Patients", href: "/dashboard/patients", icon: Users },
+      { name: "Specimens", module: "Specimens", href: "/dashboard/specimens", icon: Beaker }
+    ]
+  },
+  {
+    section: "CLINICAL PATHOLOGY",
+    icon: Activity,
+    items: [
+      { name: "Orders", module: "Orders", href: "/dashboard/orders", icon: ClipboardList },
+      { name: "Worklist", module: "Worklist", href: "/dashboard/worklist", icon: Workflow },
+      { name: "Results Entry", module: "Results Entry", href: "/dashboard/results", icon: FlaskConical },
+      { name: "QC Management", module: "QC Management", href: "/dashboard/qc", icon: TestTubes }
+    ]
+  },
+  {
+    section: "ADMINISTRATION",
+    icon: Settings,
+    items: [
+      { name: "Users", module: "Users", href: "/dashboard/users", icon: UserCog },
+      { name: "Tests & Packages", module: "Tests & Packages", href: "/dashboard/test-price", icon: IndianRupee },
+      { name: "Instruments", module: "Instruments", href: "/dashboard/instruments", icon: Microscope },
+      { name: "Roles", module: "Roles", href: "/dashboard/roles", icon: Shield },
+      { name: "Settings", module: "Settings", href: "/dashboard/settings", icon: Settings },
+      // { name: "Permissions", module: "Permissions", href: "/dashboard/permissions", icon: Lock },
+      // { name: "Assign Permissions", module: "Assign Permissions", href: "/dashboard/permission-assign", icon: FileSignature }
+      { name: "Physicians", module: "Physicians", href: "/dashboard/physician", icon: UserCog },
+      { name: "Audit Logs", module: "Audit Logs", href: "/dashboard/audit-logs", icon: BarChart3 },
+      { name: "Notifications", module: "Notifications", href: "#", icon: Bell },
+    ]
+  }
+];
+
+// Collapsed menu icons (shows only icons when sidebar collapsed)
+const collapsedMenuIcons = [
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Patients", href: "/dashboard/patients", icon: Users },
+  { name: "Specimens", href: "/dashboard/specimens", icon: Beaker },
+  { name: "Orders", href: "/dashboard/orders", icon: ClipboardList },
+  { name: "Worklist", href: "/dashboard/worklist", icon: Workflow },
+  { name: "Results Entry", href: "/dashboard/results", icon: FlaskConical },
+  { name: "QC Management", href: "/dashboard/qc", icon: TestTubes },
+  { name: "Users", href: "/dashboard/users", icon: UserCog },
+  { name: "Tests & Packages", href: "/dashboard/test-price", icon: IndianRupee },
+  { name: "Instruments", href: "/dashboard/instruments", icon: Microscope },
+  { name: "Roles", href: "/dashboard/roles", icon: Shield },
+  { name: "Settings", href: "/dashboard/settings", icon: Settings },
+  // { name: "Permissions", href: "/dashboard/permissions", icon: Lock },
+  { name: "Physicians", href: "/dashboard/physician", icon: UserCog },
+  { name: "Audit Logs", href: "/dashboard/audit-logs", icon: BarChart3 },
+  { name: "Notifications", href: "#", icon: Bell },
+
+
+];
+
+export default function Layout({ children }) {
+  const pathname = usePathname();
+  const router = useRouter();
+
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+  const [expandedSections, setExpandedSections] = useState([
+    "CORE",
+    "CLINICAL PATHOLOGY",
+    "ADMINISTRATION"
+  ]);
+  const [showSearch, setShowSearch] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+  const [notifications, setNotifications] = useState(3);
+
+  const { isAuthenticated, user, logout, hasPermission, hasHydrated } = useAuthStore();
+
+  // ================= AUTH CHECK =================
+  useEffect(() => {
+    if (!hasHydrated) return;
+    if (!isAuthenticated) router.push('/auth/login');
+  }, [hasHydrated, isAuthenticated, router]);
+
+  // ================= RESPONSIVE =================
+  useEffect(() => {
+    const check = () => {
+      const mobile = window.innerWidth < 1024;
+      setIsMobile(mobile);
+      if (mobile) setSidebarOpen(false);
+      else setSidebarOpen(true);
+    };
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  // ================= THEME =================
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [darkMode]);
+
+  // ================= GET PAGE TITLE =================
+  const getPageTitle = () => {
+    const currentPath = pathname.split("/").pop();
+    const menuItem = menuItems.flatMap(s => s.items).find(i => i.href === pathname);
+    return menuItem?.name || currentPath?.charAt(0).toUpperCase() + currentPath?.slice(1) || "Dashboard";
+  };
+
+  const getPageSubtitle = () => {
+    if (pathname.includes("/patients")) return "Manage patient records and demographics";
+    if (pathname.includes("/orders")) return "Create and track laboratory orders";
+    if (pathname.includes("/worklist")) return "Verify and review test results";
+    if (pathname.includes("/results")) return "Enter and edit test results";
+    if (pathname.includes("/specimens")) return "Track specimen lifecycle";
+    return "Welcome back, " + (user?.fullName || "User");
+  };
+
+  if (!isAuthenticated) return null;
+
+  const handleLogout = () => {
+    logout();
+    router.push("/auth/login");
+  };
+
+  const toggleSection = (section) => {
+    setExpandedSections(prev =>
+      prev.includes(section)
+        ? prev.filter(s => s !== section)
+        : [...prev, section]
+    );
+  };
+
+  const getInitials = (name) => {
+    if (!name) return "U";
+    return name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
+  };
+
+  return (
+    <div className={`flex h-screen w-full overflow-hidden bg-gray-50 dark:bg-gray-900 ${darkMode ? 'dark' : ''}`}>
+
+      {/* ================= MOBILE OVERLAY ================= */}
+      {isMobile && sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-all duration-300"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* ================= SIDEBAR ================= */}
+      <aside className={`
+        fixed lg:static z-50 top-0 left-0 h-full
+        transition-all duration-300 ease-in-out flex flex-col
+        ${isMobile
+          ? sidebarOpen ? "w-72 translate-x-0" : "-translate-x-full w-72"
+          : sidebarOpen ? "w-72" : "w-20"
+        }
+        bg-white dark:bg-gray-900
+        border-r border-gray-200 dark:border-gray-800
+        shadow-xl
+      `}>
+
+        {/* ================= LOGO SECTION ================= */}
+        <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+          <div className="flex items-center gap-3">
+            {/* {(sidebarOpen || isMobile) && (
+              <>
+
+                <img
+                  src="/blu-lims.png"
+                  alt="BluLIMS"
+                  className="h-8 sm:h-9 md:h-16 w-auto max-w-[180px] object-contain"
+                />
+              </>
+
+              // when dark the theme use it "blu-lima-dark.png"
+            )} */}
+
+            {(sidebarOpen || isMobile) && (
+              <>
+                <div className="dark:hidden">
+                  <Image
+                    src="/blu-lims.png"
+                    alt="BluLIMS"
+                    width={180}
+                    height={64}
+                    className="h-8 sm:h-9 md:h-16 w-auto max-w-[180px] object-contain"
+                  />
+                </div>
+                <div className="hidden dark:block">
+                  <Image
+                    src="/blu-lima-dark.png"
+                    alt="BluLIMS"
+                    width={200}
+                    height={84}
+                    className="h-10 sm:h-9 md:h-[96px] w-auto max-w-[280px] object-contain"
+                  />
+                </div>
+              </>
+            )}
+            {!sidebarOpen && !isMobile && (
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center mx-auto shadow-lg">
+                <span className="text-white font-bold text-sm">BL</span>
+              </div>
+            )}
+          </div>
+
+          {isMobile && (
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+            >
+              <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+            </button>
+          )}
+        </div>
+
+
+
+        {/* ================= MENU SECTION ================= */}
+        <div className="flex-1 overflow-y-auto py-4 custom-scrollbar">
+
+          {/* Desktop Collapsed View - Quick Icons */}
+          {!sidebarOpen && !isMobile && (
+            <div className="space-y-1 px-2">
+              {collapsedMenuIcons.map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={`
+                      flex items-center justify-center py-3 rounded-xl transition-all duration-200
+                      ${isActive
+                        ? "bg-blue-600 text-white shadow-lg"
+                        : "text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:text-gray-400"
+                      }
+                    `}
+                    title={item.name}
+                  >
+                    <Icon className="w-5 h-5" />
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Expanded View (Full Menu) */}
+          {(sidebarOpen || isMobile) && (
+            <div className="space-y-6">
+              {menuItems.map((section) => {
+                const filteredItems = section.items.filter((item) =>
+                  hasPermission(item.module, "read")
+                );
+
+                if (filteredItems.length === 0) return null;
+                const isExpanded = expandedSections.includes(section.section);
+
+                return (
+                  <div key={section.section} className="px-3">
+                    {/* Section Header with Toggle */}
+                    <button
+                      onClick={() => toggleSection(section.section)}
+                      className="w-full flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition group"
+                    >
+                      <div className="flex items-center gap-2">
+                        <section.icon className="w-3.5 h-3.5 text-gray-400" />
+                        <span className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          {section.section}
+                        </span>
+                      </div>
+                      {isExpanded ? (
+                        <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+                      ) : (
+                        <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
+                      )}
+                    </button>
+
+                    {/* Menu Items */}
+                    {isExpanded && (
+                      <div className="mt-1 space-y-1">
+                        {filteredItems.map((item) => {
+                          const Icon = item.icon;
+                          const isActive = pathname === item.href;
+
+                          return (
+                            <Link
+                              key={item.name}
+                              href={item.href}
+                              onClick={() => isMobile && setSidebarOpen(false)}
+                              className={`
+                                group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm
+                                transition-all duration-200
+                                ${isActive
+                                  ? "bg-blue-600 text-white shadow-md"
+                                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900"
+                                }
+                              `}
+                            >
+                              <Icon className={`w-4.5 h-4.5 ${isActive ? "text-white" : "text-gray-500 group-hover:text-gray-700"}`} />
+                              <span className="flex-1">{item.name}</span>
+                              {isActive && (
+                                <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                              )}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* ================= FOOTER SECTION ================= */}
+        <div className="border-t border-gray-200 dark:border-gray-800 p-4 space-y-3">
+
+          {/* Dark Mode Toggle */}
+          {sidebarOpen && !isMobile && (
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+            >
+              {darkMode ? <Sun className="w-4.5 h-4.5" /> : <Moon className="w-4.5 h-4.5" />}
+              <span>{darkMode ? "Light Mode" : "Dark Mode"}</span>
+            </button>
+          )}
+
+          {/* Version Info */}
+          {(sidebarOpen || isMobile) && (
+            <p className="text-[10px] text-gray-400 dark:text-gray-500 px-3">
+              PathLIMS v1.0.0
+            </p>
+          )}
+
+          {/* User Profile */}
+          <div className="flex items-center gap-3">
+            <div className={`
+              flex items-center gap-3 flex-1
+              ${(!sidebarOpen && !isMobile) ? "justify-center" : ""}
+            `}>
+              <div className={`
+                w-9 h-9 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 
+                flex items-center justify-center shadow-md flex-shrink-0
+              `}>
+                <span className="text-xs font-semibold text-white">
+                  {getInitials(user?.fullName)}
+                </span>
+              </div>
+
+              {(sidebarOpen || isMobile) && (
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                    {user?.fullName || "Administrator"}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                    {user?.email || "admin@blulims.com"}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={handleLogout}
+              className={`
+                p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition
+                ${(!sidebarOpen && !isMobile) ? "mx-auto" : ""}
+              `}
+              title="Logout"
+            >
+              <LogOut className="w-4.5 h-4.5 text-gray-500 hover:text-red-500 transition" />
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* ================= MAIN CONTENT ================= */}
+      <div className="flex flex-col flex-1 overflow-hidden">
+
+        {/* ================= HEADER ================= */}
+        <header className="h-16 flex items-center justify-between px-4 sm:px-6 border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+            >
+              {sidebarOpen ?
+                <PanelLeftClose className="w-5 h-5 text-gray-600 dark:text-gray-400" /> :
+                <Menu className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              }
+            </button>
+
+            {/* Breadcrumb / Page Title */}
+            <div className="hidden sm:block">
+              <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
+                {getPageTitle()}
+              </h1>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                {getPageSubtitle()}
+              </p>
+            </div>
+          </div>
+
+          {/* Right Side Header Icons */}
+          <div className="flex items-center gap-2">
+            {/* ================= SEARCH BAR ================= */}
+            {sidebarOpen && !isMobile && (
+              <div className="px-4 py-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search menu..."
+                    className="w-full pl-9 pr-4 py-2 text-sm bg-gray-100 dark:bg-gray-800 border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onChange={(e) => {
+                      // Implement search functionality if needed
+                      console.log("Search:", e.target.value);
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+            {/* Notification Bell */}
+            <button className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition relative">
+              <Bell className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              {notifications > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
+              )}
+            </button>
+
+            {/* Mobile Dark Mode Toggle */}
+            {isMobile && (
+              <button
+                onClick={() => setDarkMode(!darkMode)}
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+              >
+                {darkMode ? <Sun className="w-5 h-5"  /> : <Moon className="w-5 h-5 " />}
+              </button>
+            )}
+          </div>
+        </header>
+
+        {/* ================= MAIN CONTENT AREA ================= */}
+        <main className="flex-1 min-h-0 overflow-auto bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
+          <div className="p-4 sm:p-6 lg:p-8">
+            {children}
+          </div>
+        </main>
+      </div>
+
+      {/* Custom Scrollbar Styles */}
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #94a3b8;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #475569;
+        }
+        
+        /* Smooth transitions */
+        * {
+          transition-property: background-color, border-color, color, fill, stroke;
+          transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+          transition-duration: 150ms;
+        }
+      `}</style>
+    </div>
+  );
+}
