@@ -10,11 +10,12 @@ import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { PermissionDenied } from '@/components/PermissionGuard';
 import { usePermissions } from '@/hooks/permissions/usePermissions';
+import PatientDetailsPopup from '@/components/detail-popup/PatientDetailsPopup';
 
 // Delete Confirmation Modal with Theme Support
 const DeleteConfirmModal = ({ patient, onConfirm, onCancel }) => {
   if (!patient) return null;
-  
+
   return (
     <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50">
       <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-md w-full mx-4 shadow-xl">
@@ -27,7 +28,7 @@ const DeleteConfirmModal = ({ patient, onConfirm, onCancel }) => {
             <p className="text-sm text-gray-500 dark:text-gray-400">This action cannot be undone</p>
           </div>
         </div>
-        
+
         <p className="text-gray-700 dark:text-gray-300 mb-6">
           Are you sure you want to delete patient{' '}
           <span className="font-semibold">
@@ -35,7 +36,7 @@ const DeleteConfirmModal = ({ patient, onConfirm, onCancel }) => {
           </span>
           ? This will permanently remove the patient and all associated data.
         </p>
-        
+
         <div className="flex gap-3">
           <button
             onClick={onCancel}
@@ -70,17 +71,20 @@ export default function PatientsPage() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
-  
+  // State for patient details popup
+  const [selectedPatient, setSelectedPatient] = useState(null);
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
+
   const { tenant } = useAuthStore();
   const router = useRouter();
 
   // Use permission hook
-  const { 
-    canCreate, 
-    canRead, 
-    canUpdate, 
-    canDelete, 
-    isAdmin 
+  const {
+    canCreate,
+    canRead,
+    canUpdate,
+    canDelete,
+    isAdmin
   } = usePermissions();
 
   // Check if user has read access to Patients
@@ -140,7 +144,8 @@ export default function PatientsPage() {
     `${f?.[0] || ""}${l?.[0] || ""}`.toUpperCase();
 
   const handleViewDetails = (patient) => {
-    // router.push(`/dashboard/patients/${patient.id}`);
+    setSelectedPatient(patient);
+    setIsPopupOpen(true);
   };
 
   return (
@@ -218,7 +223,8 @@ export default function PatientsPage() {
                     {/* MRN - Clickable */}
                     <td className="px-6 py-4">
                       <button
-                        onClick={() => handleViewDetails(p)}
+                        // onClick={() => handleViewDetails(p)}
+                         onClick={()=>router.push(`/dashboard/orders?id=${p.mrn}`)}
                         className="text-[#1b4dff] dark:text-[#1b4dff] font-semibold hover:underline cursor-pointer"
                       >
                         {p.mrn}
@@ -266,7 +272,8 @@ export default function PatientsPage() {
                         <div className="flex items-center justify-center gap-2">
                           {/* View Button */}
                           <button
-                            onClick={() => handleViewDetails(p)}
+                            // onClick={() => handleViewDetails(p)}
+                            onClick={(e) => handleViewDetails(p, e)}
                             className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                             title="View Patient Details"
                           >
@@ -283,7 +290,7 @@ export default function PatientsPage() {
                               <Pencil className="w-4 h-4" />
                             </button>
                           )}
-                          
+
                           {/* Delete Button */}
                           {canDelete('Patients') && (
                             <button
@@ -348,6 +355,19 @@ export default function PatientsPage() {
           </div>
         )}
       </div>
+
+      {/* Order Details Popup */}
+      <PatientDetailsPopup
+        patient={selectedPatient}
+        isOpen={isPopupOpen}
+        onClose={() => {
+          setIsPopupOpen(false);
+          setSelectedPatient(null);
+        }}
+        onViewSpecimens={(orderId) => {
+          router.push(`#`);
+        }}
+      />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useOrderDelete, useOrders } from '@/hooks/use-orders';
 import {
@@ -13,8 +13,9 @@ import {
   Pencil,
   Trash2,
   Eye,
+  ListRestartIcon,
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/lib/auth-store';
 import OrderDetailsPopup from '@/components/detail-popup/OrderDetailsPopup';
@@ -70,7 +71,7 @@ const formatLabel = (value) =>
 // Delete Confirmation Modal with Theme Support
 const DeleteConfirmModal = ({ order, onConfirm, onCancel }) => {
   if (!order) return null;
-  
+
   return (
     <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50">
       <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-md w-full mx-4 shadow-xl">
@@ -83,12 +84,12 @@ const DeleteConfirmModal = ({ order, onConfirm, onCancel }) => {
             <p className="text-sm text-gray-500 dark:text-gray-400">This action cannot be undone</p>
           </div>
         </div>
-        
+
         <p className="text-gray-700 dark:text-gray-300 mb-6">
           Are you sure you want to delete order <span className="font-semibold">{order.order_number}</span>?
           This will permanently remove the order and all associated data.
         </p>
-        
+
         <div className="flex gap-3">
           <button
             onClick={onCancel}
@@ -124,17 +125,19 @@ export default function OrdersPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const searchParams = useSearchParams();
+  const mrnParam = searchParams.get("id"); // e.g., "123"
 
   const { tenant } = useAuthStore();
   const router = useRouter();
 
   // Use permission hook
-  const { 
-    canCreate, 
-    canRead, 
-    canUpdate, 
-    canDelete, 
-    isAdmin 
+  const {
+    canCreate,
+    canRead,
+    canUpdate,
+    canDelete,
+    isAdmin
   } = usePermissions();
 
   // Check if user has read access to Orders
@@ -150,9 +153,25 @@ export default function OrdersPage() {
     tenantId: tenant?.id,
   });
 
-  const orders = data?.data || [];
+  // 1. Extract the raw data
+  const allOrders = data?.data || [];
   const pagination = data?.pagination;
 
+  // 2. ✅ CORRECT: Filter using useMemo (happens before render, no flickering)
+  const orders = useMemo(() => {
+    // If there is a URL parameter, filter the orders
+    if (mrnParam) {
+      // Ensure strict comparison (Number vs String if needed)
+      return allOrders.filter((item) => String(item?.patient?.mrn) == String(mrnParam));
+    }
+    // Otherwise return all orders
+    return allOrders;
+  }, [allOrders, mrnParam]); // Re-run only when data or URL changes
+
+  // 3. ✅ CORRECT: Reset handler
+  const handleResetData = () => {
+    router.replace("/dashboard/orders");
+  };
   // State for order details popup
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
@@ -203,6 +222,10 @@ export default function OrdersPage() {
           </p>
         </div>
 
+        <div className="p-2 text-gray-600 cursor-pointer dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+          <ListRestartIcon onClick={handleResetData} />
+        </div>
+
         {canCreate('Orders') && (
           <Link
             href="/dashboard/orders/new"
@@ -238,11 +261,10 @@ export default function OrdersPage() {
                 setStatusFilter(filter.value);
                 setPage(1);
               }}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                statusFilter === filter.value
-                  ? "bg-[#1b4dff] text-white shadow"
-                  : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
-              }`}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${statusFilter === filter.value
+                ? "bg-[#1b4dff] text-white shadow"
+                : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
+                }`}
             >
               {filter.label}
             </button>
@@ -280,7 +302,8 @@ export default function OrdersPage() {
                     {/* Order Number - Clickable */}
                     <td className="px-6 py-4">
                       <button
-                        onClick={(e) => handleOrderClick(order, e)}
+                        // onClick={(e) => handleOrderClick(order, e)}
+                        onClick={()=>router.push(`/dashboard/specimens?id=${order.order_number}`)}
                         className="text-[#1b4dff] dark:text-[#1b4dff] font-semibold hover:underline cursor-pointer"
                       >
                         {order.order_number}
@@ -358,7 +381,7 @@ export default function OrdersPage() {
                               <Pencil className="w-4 h-4" />
                             </button>
                           )}
-                          
+
                           {/* Delete Button */}
                           {canDelete('Orders') && (
                             <button
@@ -379,11 +402,11 @@ export default function OrdersPage() {
                   <td colSpan={8} className="py-20 text-center">
                     <ClipboardList className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
                     <p className="text-gray-400 dark:text-gray-500 font-medium">No orders found</p>
-                    {canCreate('Orders') && (
+                    {/* {canCreate('Orders') && (
                       <Link href="/dashboard/orders/new" className="text-[#1b4dff] text-sm mt-2 inline-block hover:underline">
                         Create your first order →
                       </Link>
-                    )}
+                    )} */}
                   </td>
                 </tr>
               )}
@@ -432,7 +455,7 @@ export default function OrdersPage() {
           setSelectedOrder(null);
         }}
         onViewSpecimens={(orderId) => {
-          router.push(`/specimens?orderId=${orderId}`);
+          router.push(`#`);
         }}
       />
     </div>

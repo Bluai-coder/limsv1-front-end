@@ -30,6 +30,7 @@ import {
 
 import { useAuthStore } from "@/lib/auth-store";
 import Image from "next/image";
+import NotificationBell from "@/components/NotificationBell";
 
 // ================= MENU CONFIGURATION =================
 const menuItems = [
@@ -52,20 +53,34 @@ const menuItems = [
       { name: "QC Management", module: "QC Management", href: "/dashboard/qc", icon: TestTubes }
     ]
   },
+
+
+  {
+
+    section: "BIOHAZARD",
+    icon: Activity,
+    items: [
+      { name: "Waste Management", module: "Waste Management", href: "/dashboard/waste", icon:Workflow },
+    ]
+
+
+  },
   {
     section: "ADMINISTRATION",
     icon: Settings,
     items: [
       { name: "Users", module: "Users", href: "/dashboard/users", icon: UserCog },
-      { name: "Tests & Packages", module: "Tests & Packages", href: "/dashboard/test-price", icon: IndianRupee },
+      { name: "Tests & Prices", module: "Tests & Prices", href: "/dashboard/test-price", icon: IndianRupee },
       { name: "Instruments", module: "Instruments", href: "/dashboard/instruments", icon: Microscope },
       { name: "Roles", module: "Roles", href: "/dashboard/roles", icon: Shield },
+      { name: "Templates", module: "Templates", href: "/dashboard/templates", icon: FileText },
+
       { name: "Settings", module: "Settings", href: "/dashboard/settings", icon: Settings },
       // { name: "Permissions", module: "Permissions", href: "/dashboard/permissions", icon: Lock },
       // { name: "Assign Permissions", module: "Assign Permissions", href: "/dashboard/permission-assign", icon: FileSignature }
       { name: "Physicians", module: "Physicians", href: "/dashboard/physician", icon: UserCog },
       { name: "Audit Logs", module: "Audit Logs", href: "/dashboard/audit-logs", icon: BarChart3 },
-      { name: "Notifications", module: "Notifications", href: "#", icon: Bell },
+      { name: "Notifications", module: "Notifications", href: "/dashboard/notifications", icon: Bell },
     ]
   }
 ];
@@ -80,14 +95,16 @@ const collapsedMenuIcons = [
   { name: "Results Entry", href: "/dashboard/results", icon: FlaskConical },
   { name: "QC Management", href: "/dashboard/qc", icon: TestTubes },
   { name: "Users", href: "/dashboard/users", icon: UserCog },
-  { name: "Tests & Packages", href: "/dashboard/test-price", icon: IndianRupee },
+  { name: "Tests & Prices", href: "/dashboard/test-price", icon: IndianRupee },
   { name: "Instruments", href: "/dashboard/instruments", icon: Microscope },
   { name: "Roles", href: "/dashboard/roles", icon: Shield },
+  { name: "Templates", href: "/dashboard/templates", icon: FileText },
+
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
   // { name: "Permissions", href: "/dashboard/permissions", icon: Lock },
   { name: "Physicians", href: "/dashboard/physician", icon: UserCog },
   { name: "Audit Logs", href: "/dashboard/audit-logs", icon: BarChart3 },
-  { name: "Notifications", href: "#", icon: Bell },
+  { name: "Notifications", href: "/dashboard/notifications", icon: Bell },
 
 
 ];
@@ -157,7 +174,7 @@ export default function Layout({ children }) {
 
   const handleLogout = () => {
     logout();
-    router.push("/auth/login");
+    router.push("/auth/login"); 5
   };
 
   const toggleSection = (section) => {
@@ -200,19 +217,6 @@ export default function Layout({ children }) {
         {/* ================= LOGO SECTION ================= */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
           <div className="flex items-center gap-3">
-            {/* {(sidebarOpen || isMobile) && (
-              <>
-
-                <img
-                  src="/blu-lims.png"
-                  alt="BluLIMS"
-                  className="h-8 sm:h-9 md:h-16 w-auto max-w-[180px] object-contain"
-                />
-              </>
-
-              // when dark the theme use it "blu-lima-dark.png"
-            )} */}
-
             {(sidebarOpen || isMobile) && (
               <>
                 <div className="dark:hidden">
@@ -444,7 +448,7 @@ export default function Layout({ children }) {
           {/* Right Side Header Icons */}
           <div className="flex items-center gap-2">
             {/* ================= SEARCH BAR ================= */}
-            {sidebarOpen && !isMobile && (
+            {/* {sidebarOpen && !isMobile && (
               <div className="px-4 py-3">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -459,24 +463,22 @@ export default function Layout({ children }) {
                   />
                 </div>
               </div>
-            )}
+            )} */}
             {/* Notification Bell */}
-            <button className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition relative">
-              <Bell className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-              {notifications > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
-              )}
-            </button>
 
-            {/* Mobile Dark Mode Toggle */}
-            {isMobile && (
-              <button
-                onClick={() => setDarkMode(!darkMode)}
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
-              >
-                {darkMode ? <Sun className="w-5 h-5"  /> : <Moon className="w-5 h-5 " />}
-              </button>
-            )}
+            <div className="flex items-center gap-2">
+
+              {/* Notification Bell - Just import and use, no props needed! */}
+              <NotificationBell />
+
+              {/* Dark Mode Toggle */}
+              {isMobile && (
+                <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+                  {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                </button>
+              )}
+            </div>
+
           </div>
         </header>
 

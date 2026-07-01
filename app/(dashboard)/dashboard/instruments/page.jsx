@@ -175,7 +175,7 @@ export default function AllInstrumentPage() {
     page,
     limit: 10,
   });
-
+                                   
   const instruments = data?.data || [];
   const pagination = data?.pagination;
 

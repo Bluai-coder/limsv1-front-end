@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   useSpecimens,
   useReceiveSpecimen,
@@ -15,18 +15,24 @@ import {
   ChevronLeft,
   ChevronRight,
   TestTubes,
-  CheckCircle,
-  XCircle,
-  Plus
+  Plus,
+  ListRestartIcon,
+  QrCode,
+  Barcode,
+  Loader2,
+  Printer,
+  Camera,
+  Scan,
+  AlertCircle
 } from 'lucide-react';
 
 import { api } from '@/lib/api';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import SpecimenDetailsPopup from '@/components/detail-popup/SpecimenDetailsPopup';
 import { usePermissions } from '@/hooks/permissions/usePermissions';
 import { PermissionDenied } from '@/components/PermissionGuard';
+import { Scanner } from '@yudiel/react-qr-scanner';
 
 // ================= HELPERS =================
 const getStatusColor = (status) => {
@@ -64,10 +70,10 @@ function useAliquotsCounts(specimenIds) {
   return useQuery({
     queryKey: ["aliquots-counts", specimenIds],
     queryFn: async () => {
-      const promises = specimenIds.map(id => 
-        api.get(`/specimens/${id}/aliquots`).then(r => ({ 
-          id, 
-          count: r.data.data?.length || 0 
+      const promises = specimenIds.map(id =>
+        api.get(`/specimens/${id}/aliquots`).then(r => ({
+          id,
+          count: r.data.data?.length || 0
         })).catch(() => ({ id, count: 0 }))
       );
       const results = await Promise.all(promises);
@@ -83,18 +89,22 @@ function useAliquotsCounts(specimenIds) {
 
 export default function SpecimensPage() {
   // Use permission hook
-  const { 
-    canCreate, 
-    canRead, 
-    canUpdate, 
-    canDelete, 
-    isAdmin 
+  const {
+    canCreate,
+    canRead,
+    canUpdate,
+    canDelete,
+    isAdmin
   } = usePermissions();
 
   // Check if user has read access to Orders
   if (!canRead('Specimens')) {
     return <PermissionDenied resource="Specimens" action="read" />;
   }
+
+  const searchParams = useSearchParams();
+  const mrnParam = searchParams.get("id"); // e.g., "123"
+
 
   const [barcodeScan, setBarcodeScan] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -124,7 +134,11 @@ export default function SpecimensPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const { data, isLoading } = useSpecimens({
+  queryClient.invalidateQueries({
+    queryKey: ["aliquots"],
+  });
+
+  const { data, isLoading, refetch } = useSpecimens({
     status: statusFilter || undefined,
     page,
     limit
@@ -134,8 +148,31 @@ export default function SpecimensPage() {
   const { mutate: scanSpecimen } = useScanSpecimen();
   const { mutate: scanAliquot } = useScanAliquot();
 
-  const specimens = data?.data?.data || [];
+  const allSpecimens = data?.data?.data || [];
   const pagination = data?.data?.pagination;
+
+
+
+  // 2. ✅ CORRECT: Filter using useMemo (happens before render, no flickering)
+  const specimens = useMemo(() => {
+    // If there is a URL parameter, filter the orders
+    if (mrnParam) {
+      // Ensure strict comparison (Number vs String if needed)
+      return allSpecimens.filter((item) => String(item?.order?.order_number) == String(mrnParam));
+    }
+    // Otherwise return all orders
+    return allSpecimens;
+  }, [allSpecimens, mrnParam]); // Re-run only when data or URL changes
+
+  // 3. ✅ CORRECT: Reset handler
+  const handleResetData = () => {
+    router.replace("/dashboard/specimens");
+  };
+
+
+
+
+
 
   // Get aliquot counts for all specimens
   const specimenIds = specimens.map((sp) => sp.id);
@@ -200,6 +237,248 @@ export default function SpecimensPage() {
     }
   };
 
+
+  const [isGeneratingQr, setIsGeneratingQr] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const [cameraError, setCameraError] = useState(null);
+  const [manualBarcode, setManualBarcode] = useState('');
+
+
+
+  const [qrError, setQrError] = useState(null);
+
+
+  const handleManualSearch = () => {
+    if (manualBarcode.trim()) {
+      // handleClose();
+    }
+  };
+
+  const handlePrintQR = (specimen) => {
+
+  };
+
+
+
+
+
+  // const handleGenerateQR = async (specimen) => {
+  //   if (!specimen.qr_code?.can_generate) return;
+  //   setIsGeneratingQr(true);
+  //   setQrError(null);
+
+  //   try {
+  //     const response = await api.post(`/specimens/${specimen.id}/generate-qr`);
+
+  //     if (response.data.success && response.data.data.qr_code_url) {
+  //       setQrCodeUrl(response.data.data.qr_code_url);
+  //       if (specimen.qr_code) {
+  //         specimen.qr_code.has_qr = true;
+  //         specimen.qr_code.url = response.data.data.qr_code_url;
+  //       }
+  //       // handlePrintQR(specimen)
+
+
+  //       // PrintQR
+  //       if (!qrCodeUrl) return;
+
+  //       // New better print layout that centers and resizes the label to a real page
+  //       const printWindow = window.open('', '_blank');
+  //       printWindow.document.write(`
+  //     <html>
+  //       <head>
+  //         <title>Specimen Label - ${specimen?.barcode}</title>
+  //         <style>
+  //           body {
+  //             display: flex;
+  //             justify-content: center;
+  //             align-items: center;
+  //             height: 100vh;
+  //             margin: 0;
+  //             font-family: Arial, sans-serif;
+  //             background: #fff;
+  //           }
+  //           .container {
+  //             text-align: center;
+  //             max-width: 100%;
+  //           }
+  //           img {
+  //             max-width: 90vw;
+  //             max-height: 90vh;
+  //             object-fit: contain;
+  //             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  //           }
+  //           @media print {
+  //             body { margin: 0; padding: 0; }
+  //             img { max-width: 100%; max-height: 100%; box-shadow: none; }
+  //           }
+  //         </style>
+  //       </head>
+  //       <body>
+  //         <div class="container">
+  //           <img src="${qrCodeUrl}" alt="Specimen Label" />
+  //         </div>
+  //       </body>
+  //     </html>
+  //   `);
+  //       printWindow.document.close();
+
+  //       // Wait for image to load before triggering print
+  //       printWindow.onload = () => {
+  //         printWindow.print();
+  //         // printWindow.close(); // Optional: close after printing
+  //       };
+
+
+
+
+
+
+
+  //     } else {
+  //       throw new Error('Invalid response from server');
+  //     }
+  //   } catch (error) {
+  //     console.error('Error generating QR code:', error);
+  //     setQrError(error.response?.data?.message || error.message);
+  //   } finally {
+  //     setIsGeneratingQr(false);
+  //   }
+  // };
+
+  const handleGenerateQR = async (specimen) => {
+    if (!specimen.qr_code?.can_generate) return;
+
+    setIsGeneratingQr(true);
+    setQrError(null);
+
+    try {
+      const response = await api.post(`/specimens/${specimen.id}/generate-qr`);
+
+      if (response.data.success && response.data.data.qr_code_url) {
+        const qrCodeUrl = response.data.data.qr_code_url;
+        setQrCodeUrl(qrCodeUrl);
+
+        // Update specimen object with new QR data
+        if (specimen.qr_code) {
+          specimen.qr_code.has_qr = true;
+          specimen.qr_code.url = qrCodeUrl;
+        }
+
+        // Print QR label
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+        <html>
+          <head>
+            <title>Specimen Label - ${specimen?.barcode}</title>
+            <style>
+              body {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                margin: 0;
+                font-family: Arial, sans-serif;
+                background: #fff;
+              }
+              .container {
+                text-align: center;
+                max-width: 100%;
+              }
+              img {
+                max-width: 90vw;
+                max-height: 90vh;
+                object-fit: contain;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+              }
+              @media print {
+                body { margin: 0; padding: 0; }
+                img { max-width: 100%; max-height: 100%; box-shadow: none; }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <img src="${qrCodeUrl}" alt="Specimen Label" />
+            </div>
+          </body>
+        </html>
+      `);
+        printWindow.document.close();
+
+        // Wait for image to load before triggering print
+        printWindow.onload = () => {
+          printWindow.print();
+          // printWindow.close(); // Optional: close after printing
+        };
+      } else {
+        throw new Error('Invalid response from server');
+      }
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+      setQrError(error.response?.data?.message || error.message);
+    } finally {
+      setIsGeneratingQr(false);
+    }
+  };
+
+
+
+
+
+  const handleScanSuccess = async (detectedCodes) => {
+    if (detectedCodes && detectedCodes.length > 0) {
+      const scannedData = detectedCodes[0].rawValue;
+      console.log("Scanned:", scannedData);
+
+      try {
+        let qrData;
+        try {
+          qrData = JSON.parse(scannedData);
+        } catch {
+          qrData = { barcode: scannedData };
+        }
+
+        const barcode = qrData.barcode || scannedData;
+        const specimenId = qrData.id;
+
+        try {
+          const response = await api.post('/specimens/scan', { barcode });
+
+          if (response?.data?.data) {
+            const newStatus = response.data.data.orderStatus;
+            toast.success(`Specimen ${barcode} status updated to ${newStatus}`);
+
+            if (window.navigator?.vibrate) {
+              window.navigator.vibrate(200);
+            }
+            handleClose();
+            refetch();
+          }
+        } catch (error) {
+          console.error("Scan API error:", error);
+          const errorMsg = error.response?.data?.message || 'Failed to scan specimen';
+          toast.error(errorMsg);
+          setCameraError(errorMsg);
+          setTimeout(() => setCameraError(null), 3000);
+        }
+
+      } catch (error) {
+        console.error("Error parsing QR:", error);
+        setCameraError("Invalid QR code format");
+        setTimeout(() => setCameraError(null), 3000);
+      }
+    }
+  };
+
+  const handleScanError = (error) => {
+    console.error("Scanner error:", error);
+    setCameraError("Could not access camera. Please check permissions.");  
+    setTimeout(() => setCameraError(null), 5000);
+  };
+
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4 sm:p-6 space-y-6 transition-colors duration-200">
       {/* Header */}
@@ -208,22 +487,95 @@ export default function SpecimensPage() {
           <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Specimen Tracking</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">Scan and manage specimens lifecycle</p>
         </div>
+        <div className="p-2 cursor-pointer text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+          <ListRestartIcon onClick={handleResetData} />
+
+        </div>
+
       </div>
 
       {/* Barcode Scanner */}
-      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-3xl border border-gray-200/60 dark:border-gray-700/60 shadow-sm p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <ScanBarcode className="w-5 h-5 text-[#1b4dff] dark:text-[#1b4dff]" />
-          <h2 className="font-medium text-gray-700 dark:text-gray-300">Barcode Scanner</h2>
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl dark:border-gray-700/60 shadow-sm ">
+        <div className="bg-gradient-to-r from-green-50 to-teal-50 dark:from-green-950/30 dark:to-teal-950/30 rounded-xl p-4 border border-green-100 dark:border-green-800">
+          <h3 className="text-sm font-semibold text-green-800 dark:text-green-300 mb-3 flex items-center gap-2">
+            <Scan className="w-4 h-4" />
+            Scan QR/Bar Code
+          </h3>
+
+          {!isScanning ? (
+            <div className="text-center">
+              <button
+                onClick={() => setIsScanning(true)}
+                className="px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center gap-2 mx-auto"
+              >
+                <Camera className="w-4 h-4" />
+                Start Scanning
+              </button>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                Position QR code within the frame to scan
+              </p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                Make sure you have granted camera permissions
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center">
+              <div className="relative w-full max-w-[300px]">
+                {/* Safe rendering for scanner - avoids Next.js hydration/camera crashes */}
+                {typeof window !== 'undefined' && (
+                  <Scanner
+                    onScan={handleScanSuccess}
+                    onError={handleScanError}
+                    constraints={{ facingMode: "environment" }}
+                    scanDelay={500}
+                    style={{ width: '100%', borderRadius: '0.5rem', height: '150px' }}
+                  />
+                )}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="border-2 border-green-500 rounded-md w-24 h-24"></div>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsScanning(false)}
+                className="mt-1.5 px-2.5 py-0.5 text-[10px] bg-red-600 hover:bg-red-700 text-white rounded-md"
+              >
+                Stop
+              </button>
+            </div>
+          )}
+
+          {cameraError && (
+            <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+              <p className="text-sm text-red-700 dark:text-red-300 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4" />
+                {cameraError}
+              </p>
+            </div>
+          )}
+
+          {/* Manual Barcode Input */}
+          <div className="mt-4 pt-4 border-t border-green-200 dark:border-green-800">
+            <p className="text-xs text-gray-500 dark:text-gray-400 text-center mb-2">
+              Or enter barcode manually:
+            </p>
+            <div className="flex gap-2">
+              <input
+                value={barcodeScan}
+                onChange={(e) => setBarcodeScan(e.target.value)}
+                onKeyDown={handleBarcodeScan}
+                placeholder="Scan or type barcode and press Enter..."
+                className="w-full px-5 py-4 border border-gray-200 dark:border-gray-700 rounded-2xl bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#1b4dff] text-lg font-mono transition-colors duration-200"
+                autoFocus
+              />
+              {/* <button
+                onClick={handleManualSearch}
+                className="px-4 py-2 text-sm bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+              >
+                Search
+              </button> */}
+            </div>
+          </div>
         </div>
-        <input
-          value={barcodeScan}
-          onChange={(e) => setBarcodeScan(e.target.value)}
-          onKeyDown={handleBarcodeScan}
-          placeholder="Scan or type barcode and press Enter..."
-          className="w-full px-5 py-4 border border-gray-200 dark:border-gray-700 rounded-2xl bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#1b4dff] text-lg font-mono transition-colors duration-200"
-          autoFocus
-        />
       </div>
 
       {/* Status Filters */}
@@ -232,11 +584,10 @@ export default function SpecimensPage() {
           <button
             key={s}
             onClick={() => { setStatusFilter(s); setPage(1); }}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-              statusFilter === s
-                ? "bg-[#1b4dff] text-white shadow-lg dark:shadow-blue-900/30"
-                : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
-            }`}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${statusFilter === s
+              ? "bg-[#1b4dff] text-white shadow-lg dark:shadow-blue-900/30"
+              : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
+              }`}
           >
             {s ? s.charAt(0).toUpperCase() + s.slice(1) : "All"}
           </button>
@@ -255,6 +606,7 @@ export default function SpecimensPage() {
                 <th className="px-6 py-4 text-left font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Type</th>
                 <th className="px-6 py-4 text-left font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Status</th>
                 <th className="px-6 py-4 text-left font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Collected</th>
+                <th className="px-6 py-4 text-left font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Label Print</th>
                 <th className="px-6 py-4 text-left font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Action</th>
                 <th className="px-6 py-4 text-left font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Aliquots</th>
               </tr>
@@ -271,8 +623,8 @@ export default function SpecimensPage() {
                     ))}
                   </tr>
                 ))
-              ) : specimens.length > 0 ? (
-                specimens.map((sp) => (
+              ) : specimens?.length > 0 ? (
+                specimens?.map((sp) => (
                   <tr key={sp?.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150">
                     <td className="px-6 py-4">
                       <button
@@ -311,6 +663,23 @@ export default function SpecimensPage() {
                     </td>
 
                     <td className="px-6 py-4">
+                      {console.log("spspsp", sp.status)}
+                      <span className={`px-3 py-1 text-xs  font-medium ${sp.status !== "collected" ? 'color-green' : ''}`}>
+                        {/* Barcode and QrCode */}
+                        {isGeneratingQr ?
+                          <Loader2 className="w-8 h-8 text-indigo-500 dark:text-indigo-400 animate-spin" /> :
+
+                          <Printer
+                            className={` ${sp.status == "completed" ? 'text-green-600' : 'text-gray-600'} dark:text-blue-400 cursor-pointer hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors`}
+                            onClick={() => handleGenerateQR(sp)}
+                            disabled={isGeneratingQr}
+                          />
+                        }
+
+                      </span>
+                    </td>
+
+                    <td className="px-6 py-4">
                       {sp.status === "collected" && (
                         <button
                           onClick={() => setReceiveModal(sp)}
@@ -319,7 +688,8 @@ export default function SpecimensPage() {
                           Receive
                         </button>
                       )}
-                      {sp.status === "received" && (
+                      {console.log("aliquotCountsaliquotCountsaliquotCounts", aliquotCounts)}
+                      {aliquotCounts?.[sp.id] == 0 && sp.status === "received" && (
                         <button
                           onClick={() => setAliquotModal(sp)}
                           className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium transition-colors"
@@ -355,7 +725,7 @@ export default function SpecimensPage() {
         </div>
 
         {/* Pagination */}
-        {pagination?.totalPages > 1 && (
+        {pagination?.totalPages > 10 && (
           <div className="flex justify-between items-center px-5 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Showing {(page - 1) * limit + 1} to {Math.min(page * limit, pagination.total)} of {pagination.total} specimens
@@ -402,11 +772,10 @@ export default function SpecimensPage() {
                   <button
                     key={c.value}
                     onClick={() => setReceiveCondition(c.value)}
-                    className={`px-4 py-3 rounded-2xl text-sm font-medium border transition-all ${
-                      receiveCondition === c.value
-                        ? `${c.color} border-current ring-2 ring-offset-2 dark:ring-offset-gray-800`
-                        : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
-                    }`}
+                    className={`px-4 py-3 rounded-2xl text-sm font-medium border transition-all ${receiveCondition === c.value
+                      ? `${c.color} border-current ring-2 ring-offset-2 dark:ring-offset-gray-800`
+                      : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                      }`}
                   >
                     {c.label}
                   </button>
@@ -440,11 +809,10 @@ export default function SpecimensPage() {
               <button
                 onClick={handleReceive}
                 disabled={receiveSpecimen.isPending}
-                className={`flex-1 py-3 rounded-2xl font-medium text-white transition-colors ${
-                  receiveCondition === 'acceptable' 
-                    ? 'bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700' 
-                    : 'bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700'
-                }`}
+                className={`flex-1 py-3 rounded-2xl font-medium text-white transition-colors ${receiveCondition === 'acceptable'
+                  ? 'bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700'
+                  : 'bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700'
+                  }`}
               >
                 {receiveCondition === 'acceptable' ? 'Accept & Receive' : 'Reject Specimen'}
               </button>
@@ -538,11 +906,11 @@ export default function SpecimensPage() {
                 <h2 className="font-semibold text-gray-900 dark:text-white">Aliquots</h2>
                 <p className="text-sm text-gray-500 dark:text-gray-400 font-mono">{aliquotViewModal.barcode}</p>
               </div>
-              <button 
+              <button
                 onClick={() => {
                   setAliquotViewModal(null);
                   queryClient.invalidateQueries(["aliquots-counts"]);
-                }} 
+                }}
                 className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
               >
                 ✕
@@ -560,15 +928,16 @@ export default function SpecimensPage() {
       <SpecimenDetailsPopup
         specimen={selectedSpecimen}
         isOpen={isSpecimenPopupOpen}
+        refetch={refetch}
         onClose={() => {
           setIsSpecimenPopupOpen(false);
           setSelectedSpecimen(null);
         }}
         onViewOrder={(orderId) => {
-          router.push(`/orders?orderId=${orderId}`);
+          // router.push(`/orders?orderId=${orderId}`);
         }}
         onViewPatient={(patientId) => {
-          router.push(`/patients?patientId=${patientId}`);
+          // router.push(`/patients?patientId=${patientId}`);
         }}
       />
     </div>
@@ -581,6 +950,8 @@ function AliquotList({ specimenId }) {
     queryKey: ["aliquots", specimenId],
     queryFn: () => api.get(`/specimens/${specimenId}/aliquots`).then(r => r.data.data),
   });
+
+
 
   if (isLoading) return <p className="text-sm text-gray-400 dark:text-gray-500 py-8 text-center">Loading aliquots...</p>;
   if (!data?.length) return <p className="text-sm text-gray-400 dark:text-gray-500 py-8 text-center">No aliquots found</p>;
@@ -598,11 +969,10 @@ function AliquotList({ specimenId }) {
             <div className="font-mono text-xs text-gray-900 dark:text-gray-100">{a.barcode}</div>
             <div className="text-gray-600 dark:text-gray-400">{a.container_type}</div>
             <div>
-              <span className={`px-3 py-1 text-xs rounded-full font-medium ${
-                a.status === 'completed' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 
+              <span className={`px-3 py-1 text-xs rounded-full font-medium ${a.status === 'completed' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' :
                 a.status === 'processing' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300' :
-                'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-              }`}>
+                  'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                }`}>
                 {a.status}
               </span>
             </div>

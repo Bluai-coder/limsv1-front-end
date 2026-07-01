@@ -22,7 +22,7 @@ const DEPARTMENTS = ['All', 'Hematology', 'Biochemistry', 'Immunology', 'Clinica
 const PRIORITY_OPTIONS = ['All', 'stat', 'urgent', 'routine'];
 const STATUS_OPTIONS = [
   { value: '', label: 'All' },
-  { value: 'pending', label: 'Pending' },
+  // { value: 'pending', label: 'Pending' },
   { value: 'in_progress', label: 'In Progress' },
   { value: 'resulted', label: 'Results Ready' },
   { value: 'tech_verified', label: 'Tech Verified' },
