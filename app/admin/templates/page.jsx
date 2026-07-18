@@ -5,7 +5,7 @@ import { useState } from 'react';
 import {
     Plus, Edit, Trash2, Copy, Eye, Star,
     Loader2, Search, Filter, CheckCircle, XCircle,
-    FileText, Layout, RefreshCw, ChevronDown, ChevronUp,
+    FileText, Layout, RefreshCw, ChevronDown,
     AlertTriangle
 } from 'lucide-react';
 import { useAdminTemplates, useAdminTemplateStatistics, useDeleteAdminTemplate, useSetDefaultAdminTemplate, useDuplicateAdminTemplate, useToggleAdminTemplateActive } from '@/hooks/useAdminTemplates';
@@ -93,6 +93,7 @@ export default function AdminTemplatesPage() {
     const toggleActive = useToggleAdminTemplateActive();
 
     const templates = templatesData?.data || [];
+    console.log("templatestemplates",templates)
     const statistics = statsData?.data || { total: 0, active: 0, default: 0, byType: {} };
 
     const handleDeleteClick = (template) => {

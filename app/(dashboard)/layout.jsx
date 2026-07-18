@@ -60,7 +60,7 @@ const menuItems = [
     section: "BIOHAZARD",
     icon: Activity,
     items: [
-      { name: "Waste Management", module: "Waste Management", href: "/dashboard/waste", icon:Workflow },
+      { name: "Waste Management", module: "Waste Management", href: "/dashboard/waste", icon: Workflow },
     ]
 
 
@@ -74,6 +74,7 @@ const menuItems = [
       { name: "Instruments", module: "Instruments", href: "/dashboard/instruments", icon: Microscope },
       { name: "Roles", module: "Roles", href: "/dashboard/roles", icon: Shield },
       { name: "Templates", module: "Templates", href: "/dashboard/templates", icon: FileText },
+      { name : "Hospitals", module: "Hospitals", href: "/dashboard/hospitals", icon: TestTube },
 
       { name: "Settings", module: "Settings", href: "/dashboard/settings", icon: Settings },
       // { name: "Permissions", module: "Permissions", href: "/dashboard/permissions", icon: Lock },
@@ -99,7 +100,7 @@ const collapsedMenuIcons = [
   { name: "Instruments", href: "/dashboard/instruments", icon: Microscope },
   { name: "Roles", href: "/dashboard/roles", icon: Shield },
   { name: "Templates", href: "/dashboard/templates", icon: FileText },
-
+  { name: "Hospitals", href: "/dashboard/hospitals", icon: TestTube },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
   // { name: "Permissions", href: "/dashboard/permissions", icon: Lock },
   { name: "Physicians", href: "/dashboard/physician", icon: UserCog },
@@ -160,6 +161,9 @@ export default function Layout({ children }) {
     const menuItem = menuItems.flatMap(s => s.items).find(i => i.href === pathname);
     return menuItem?.name || currentPath?.charAt(0).toUpperCase() + currentPath?.slice(1) || "Dashboard";
   };
+
+
+
 
   const getPageSubtitle = () => {
     if (pathname.includes("/patients")) return "Manage patient records and demographics";

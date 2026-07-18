@@ -36,7 +36,7 @@ export default function NewOrderPage() {
   const [patientSearch, setPatientSearch] = useState('');
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [showPatientDropdown, setShowPatientDropdown] = useState(false);
-  const { isAuthenticated, user, tenant } = useAuthStore();
+  const { user, tenant } = useAuthStore();
   const [selectedPackages, setSelectedPackages] = useState([]);
 
   const [page, setPage] = useState(1);
@@ -144,7 +144,7 @@ export default function NewOrderPage() {
     ) || [];
 
   const togglePackage = (pkg) => {
-    const isSelected = selectedPackages.some(p => p.id === pkg.id);
+    const isSelected = selectedPackages.some(p => p.id === pkg.id); 
     if (isSelected) {
       setSelectedPackages(prev => prev.filter(p => p.id !== pkg.id));
       setSelectedTests(prev =>

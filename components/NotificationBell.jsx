@@ -17,7 +17,6 @@ import {
   AlertTriangle,
   Info,
   X,
-  Trash2,
   CheckCheck,
   ExternalLink,
   Loader2
@@ -33,12 +32,15 @@ import {
   useMarkAllAsSeen
 } from '@/hooks/useNotifications';
 import { useAuthStore } from '@/lib/auth-store';
+import { usePathname } from 'next/navigation';
 
 export default function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   const [dropdownStyle, setDropdownStyle] = useState({});
+  const pathname = usePathname();
+
 
   const { user } = useAuthStore();
 
@@ -46,7 +48,10 @@ export default function NotificationBell() {
   const dropdownRef = useRef(null);
   const hasMarkedSeen = useRef(false);
 
-
+  const isAdminPath = pathname.includes("/admin");
+  if (isAdminPath) {
+    return null; // Don't render the notification bell on admin pages
+  }
 
   // API Hooks
   const { data: notificationsData, isLoading, refetch } = useNotifications({

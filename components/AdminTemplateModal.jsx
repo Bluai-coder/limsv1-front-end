@@ -1327,7 +1327,7 @@ export default function AdminTemplateModal({ isOpen, onClose, mode, template, on
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                                        Lab / Organization Name
+                                        Lab / Organization Name 
                                     </label>
                                     <input
                                         type="text"

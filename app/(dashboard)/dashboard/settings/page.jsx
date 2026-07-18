@@ -28,6 +28,7 @@ const modules = [
   "Settings",
   "Physicians",
   "Audit Logs",
+  "Hospitals",
   "Waste Management"
 ];
 

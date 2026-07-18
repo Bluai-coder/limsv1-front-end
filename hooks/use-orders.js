@@ -54,6 +54,18 @@ export function useCreateOrder() {
   });
 }
 
+export function useCreateOrderForBluHealth() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data) => orderApi.createForBluHealth(data).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['orders'] });
+      qc.invalidateQueries({ queryKey: ['order'] });
+    },
+  });
+}
+
+
 export function useOrderStats() {
   return useQuery({
     queryKey: ['orders', 'stats'],
