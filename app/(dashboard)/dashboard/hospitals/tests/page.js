@@ -370,13 +370,15 @@ const OrderCard = ({ order, onViewDetails, createOrder }) => {
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => createOrder(order)}
-                            className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
-                            title="Create Order"
-                        >
-                            <Plus className="w-4 h-4" />
-                        </button>
+                       {orderData?.status === 'pending' && (
+                            <button
+                                onClick={() => createOrder(order)}
+                                className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                                title="Create Order"
+                            >
+                                <Plus className="w-4 h-4" />
+                            </button>
+                        )} 
                         <button
                             onClick={() => setIsExpanded(!isExpanded)}
                             className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
@@ -465,7 +467,7 @@ export default function LabRecommendations() {
         currentPage: 1
     });
 
-    const { tenant, user } = useAuthStore();
+    const { tenant } = useAuthStore();
 
     // Fetch lab recommendations
     const fetchRecommendations = async () => {
@@ -479,7 +481,7 @@ export default function LabRecommendations() {
             setLoading(true);
             setError(null);
 
-            const endpoint = `http://192.168.1.26:3000/api/bluhealth/lab-recommendations/hospital/${hospitalId}/lab/${tenant.id}?page=${page}&limit=10`;
+            const endpoint = `http://192.168.1.21:3000/api/bluhealth/lab-recommendations/hospital/${hospitalId}/lab/${tenant.id}?page=${page}&limit=10`;
 
             const response = await fetch(endpoint, {
                 method: 'GET',
@@ -490,7 +492,6 @@ export default function LabRecommendations() {
             }
 
             const apiResponse = await response.json();
-            console.log('API Response:', apiResponse);
 
             if (apiResponse?.success && apiResponse?.data) {
                 const data = apiResponse.data;
@@ -552,7 +553,6 @@ export default function LabRecommendations() {
     const createOrderForBluHealth = useCreateOrderForBluHealth();
 
     const createOrderFromItDirectlyalsofirstaddpetiendoctor = async (order) => {
-        console.log("order", order)
 
         try {
             await createOrderForBluHealth.mutateAsync(order);

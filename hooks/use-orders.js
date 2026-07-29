@@ -14,6 +14,14 @@ export function useOrders(params) {
   });
 }
 
+export function useOrdersByPatientId(params) {
+  return useQuery({
+    queryKey: ['orders', params],
+    queryFn: () => orderApi.getOrdersByPatientId(params).then(r => r.data),
+    staleTime: 15_000,
+  });
+}
+
 export function useOrder(id) {
   return useQuery({
     queryKey: ['order', id], // ✅ Changed from 'orders' to 'order'

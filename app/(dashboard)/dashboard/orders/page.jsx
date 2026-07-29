@@ -222,18 +222,25 @@ export default function OrdersPage() {
           </p>
         </div>
 
-        <div className="p-2 text-gray-600 cursor-pointer dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
-          <ListRestartIcon onClick={handleResetData} />
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8" >
+          <div className="p-2 text-gray-600 cursor-pointer dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+            <ListRestartIcon onClick={handleResetData} />
+          </div>
+
+          {canCreate('Orders') && (
+            <Link
+              href="/dashboard/orders/new"
+              className="flex items-center gap-2 px-5 py-3 bg-[#1b4dff] hover:bg-[#1b4dff]/90 text-white rounded-2xl text-sm font-medium shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all"
+            >
+              <Plus className="w-4 h-4" /> New Order
+            </Link>
+          )}
+
         </div>
 
-        {canCreate('Orders') && (
-          <Link
-            href="/dashboard/orders/new"
-            className="flex items-center gap-2 px-5 py-3 bg-[#1b4dff] hover:bg-[#1b4dff]/90 text-white rounded-2xl text-sm font-medium shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all"
-          >
-            <Plus className="w-4 h-4" /> New Order
-          </Link>
-        )}
+
+
+
       </div>
 
       {/* Search + Filters */}
@@ -303,7 +310,7 @@ export default function OrdersPage() {
                     <td className="px-6 py-4">
                       <button
                         // onClick={(e) => handleOrderClick(order, e)}
-                        onClick={()=>router.push(`/dashboard/specimens?id=${order.order_number}`)}
+                        onClick={() => router.push(`/dashboard/specimens?id=${order.order_number}`)}
                         className="text-[#1b4dff] dark:text-[#1b4dff] font-semibold hover:underline cursor-pointer"
                       >
                         {order.order_number}

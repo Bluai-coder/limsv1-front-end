@@ -1,35 +1,30 @@
 
-
-
 'use client';
-
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useCreateUser } from "@/hooks/use-users";
-import { useAuthStore } from '@/lib/auth-store';
-import { useRoles } from '@/hooks/use-roles';
-import { PermissionDenied } from '@/components/PermissionGuard';
-import { ArrowLeft, Save, Loader2, ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
-import MultiSelectField from '@/components/form-fields/MultiSelectField';
 import { useForm } from 'react-hook-form';
+import { useRouter } from 'next/navigation';
+import { useRoles } from '@/hooks/use-roles';
+import { useAuthStore } from '@/lib/auth-store';
+import { useCreateUser } from "@/hooks/use-users";
+import { PermissionDenied } from '@/components/PermissionGuard';
 import { usePermissions } from '@/hooks/permissions/usePermissions';
+import { ArrowLeft, Save, Loader2, ShieldAlert } from 'lucide-react';
+import MultiSelectField from '@/components/form-fields/MultiSelectField';
 
 export default function NewUserPage() {
   const router = useRouter();
   const createUser = useCreateUser();
   const { tenant } = useAuthStore();
   
-  // Permission checks
+  // Permission checks :::----
   const { canCreate, isAdmin, hasPermission } = usePermissions();
 
   // Check if user has permission to create users
   const hasCreatePermission = canCreate('Users');
 
-  console.log("hasCreatePermission", hasCreatePermission)
   
-  // Redirect or show permission denied if no access
+  // Redirect or show permission denied if no access :--
   if (!hasCreatePermission) {
     return <PermissionDenied resource="Users" action="create" />;
   }

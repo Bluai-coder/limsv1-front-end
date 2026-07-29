@@ -696,7 +696,7 @@ export default function OrderDetailsPopup({ order, isOpen, onClose, onViewSpecim
 
       {/* Drawer/Popup */}
       <div
-        className={`fixed right-0 top-0 h-full w-full sm:max-w-2xl lg:max-w-3xl bg-white dark:bg-gray-800 shadow-2xl z-50 transition-transform duration-300 ease-out ${
+        className={`fixed right-0 top-[-24px] h-full w-full sm:max-w-2xl lg:max-w-3xl bg-white dark:bg-gray-800 shadow-2xl z-50 transition-transform duration-300 ease-out ${
           isAnimating ? 'translate-x-0' : 'translate-x-full'
         }`}
       >

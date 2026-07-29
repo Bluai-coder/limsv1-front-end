@@ -251,7 +251,7 @@ export default function AllHospitalsAttachedCurrentLab() {
             setLoading(true);
             setError(null);
 
-            const endpoint = `http://192.168.1.26:3000/api/bluhealth/labs/${tenant.id}/hospitals`;
+            const endpoint = `http://192.168.1.21:3000/api/bluhealth/labs/${tenant.id}/hospitals`;
 
             const response = await fetch(endpoint, {
                 method: 'GET',
@@ -262,7 +262,6 @@ export default function AllHospitalsAttachedCurrentLab() {
             }
 
             const hospitalData = await response.json();
-            console.log('API Response:', hospitalData);
 
             if (hospitalData?.data?.hospitals) {
     

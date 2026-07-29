@@ -1,0 +1,26 @@
+name: Deploy Lims Frontend App to Contabo
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Contabo via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.CONTABO_HOST }}
+          username: ${{ secrets.CONTABO_USERNAME }}
+          key: ${{ secrets.CONTABO_SSH_KEY }}
+          script: |
+            cd /var/www/blulims
+            git pull origin main
+            npm install
+            npm run build

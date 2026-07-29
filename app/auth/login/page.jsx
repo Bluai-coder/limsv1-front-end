@@ -351,10 +351,7 @@ export default function LoginPage() {
         tenantSubdomain: tenant,
       });
 
-
       const data = res?.data;
-
-
       const permissionMap = Object.fromEntries(
         (data?.user?.permissions || data.data?.permissions || []).map((p) => [p.module, p.actions || []])
       );

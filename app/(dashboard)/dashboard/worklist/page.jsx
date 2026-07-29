@@ -54,7 +54,7 @@ export default function WorklistPage() {
   const [page, setPage] = useState(1);
   const limit = 10;
   const [selectedItems, setSelectedItems] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(''); 
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
   // Modal States

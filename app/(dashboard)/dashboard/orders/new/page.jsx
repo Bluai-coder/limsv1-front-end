@@ -14,23 +14,25 @@ import TestDetailsModal from '@/components/detail-popup/TestDetailsModal';
 import { useReferringPhysician } from '@/hooks/useReferringPhysician';
 import { usePermissions } from '@/hooks/permissions/usePermissions';
 import { PermissionDenied } from '@/components/PermissionGuard';
+import PaymentModal from "@/components/PaymentModal";
+
 
 export default function NewOrderPage() {
   const router = useRouter();
   const createOrder = useCreateOrder();
-   // Use permission hook
-    const { 
-      canCreate, 
-      canRead, 
-      canUpdate, 
-      canDelete, 
-      isAdmin 
-    } = usePermissions();
+  // Use permission hook
+  const {
+    canCreate,
+    canRead,
+    canUpdate,
+    canDelete,
+    isAdmin
+  } = usePermissions();
 
-     if (!canCreate('Orders')) {
-    
-        return <PermissionDenied resource="Orders" action="create" />;
-      }
+  if (!canCreate('Orders')) {
+
+    return <PermissionDenied resource="Orders" action="create" />;
+  }
 
   // Patient search
   const [patientSearch, setPatientSearch] = useState('');
@@ -40,22 +42,22 @@ export default function NewOrderPage() {
   const [selectedPackages, setSelectedPackages] = useState([]);
 
   const [page, setPage] = useState(1);
-  const { data, isLoading, isFetching } = usePatients({ 
-    tenantId: tenant?.id || "", 
-    q: patientSearch || undefined, 
-    page, 
-    limit: 100 
+  const { data, isLoading, isFetching } = usePatients({
+    tenantId: tenant?.id || "",
+    q: patientSearch || undefined,
+    page,
+    limit: 100
   });
 
   // Physician states
   const [physicianSearch, setPhysicianSearch] = useState('');
   const [selectedPhysician, setSelectedPhysician] = useState(null);
   const [showPhysicianDropdown, setShowPhysicianDropdown] = useState(false);
-  
-  const { 
-    physicians, 
-    loading: physiciansLoading, 
-    getPhysicians 
+
+  const {
+    physicians,
+    loading: physiciansLoading,
+    getPhysicians
   } = useReferringPhysician();
 
   const patientResults = data?.data || [];
@@ -144,7 +146,7 @@ export default function NewOrderPage() {
     ) || [];
 
   const togglePackage = (pkg) => {
-    const isSelected = selectedPackages.some(p => p.id === pkg.id); 
+    const isSelected = selectedPackages.some(p => p.id === pkg.id);
     if (isSelected) {
       setSelectedPackages(prev => prev.filter(p => p.id !== pkg.id));
       setSelectedTests(prev =>
@@ -159,6 +161,7 @@ export default function NewOrderPage() {
     }
   };
 
+
   const handleSubmit = async () => {
     if (!selectedPatient) {
       toast.error('Please select a patient');
@@ -168,6 +171,7 @@ export default function NewOrderPage() {
       toast.error('Please select at least one test');
       return;
     }
+
 
     try {
       const order = await createOrder.mutateAsync({
@@ -209,7 +213,7 @@ export default function NewOrderPage() {
             {/* Patient + Physician Row */}
             {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
              */}
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative overflow-visible">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative overflow-visible">
 
               {/* Patient Selection */}
               <div className="relative z-20 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border border-gray-200/60 dark:border-gray-700/60 rounded-xl shadow-sm overflow-visible">
@@ -403,11 +407,10 @@ export default function NewOrderPage() {
                   <button
                     key={s}
                     onClick={() => setActiveTab(s)}
-                    className={`flex-1 py-3 text-sm font-medium transition-all ${
-                      activeTab === s
-                        ? 'bg-[#1b4dff] text-white'
-                        : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
-                    }`}
+                    className={`flex-1 py-3 text-sm font-medium transition-all ${activeTab === s
+                      ? 'bg-[#1b4dff] text-white'
+                      : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      }`}
                   >
                     {s}
                   </button>
@@ -437,19 +440,17 @@ export default function NewOrderPage() {
                             <button
                               key={test.id}
                               onClick={() => toggleTest(test)}
-                              className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all duration-200 ${
-                                isSelected
-                                  ? "border-[#1b4dff] bg-blue-50 dark:bg-blue-900/20 shadow-sm"
-                                  : "border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
-                              }`}
+                              className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all duration-200 ${isSelected
+                                ? "border-[#1b4dff] bg-blue-50 dark:bg-blue-900/20 shadow-sm"
+                                : "border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+                                }`}
                             >
                               <div className="flex items-center gap-3 flex-1 min-w-0">
                                 <div
-                                  className={`w-6 h-6 rounded-xl flex items-center justify-center border-2 transition-all flex-shrink-0 ${
-                                    isSelected
-                                      ? "bg-[#1b4dff] border-[#1b4dff]"
-                                      : "border-gray-300 dark:border-gray-600"
-                                  }`}
+                                  className={`w-6 h-6 rounded-xl flex items-center justify-center border-2 transition-all flex-shrink-0 ${isSelected
+                                    ? "bg-[#1b4dff] border-[#1b4dff]"
+                                    : "border-gray-300 dark:border-gray-600"
+                                    }`}
                                 >
                                   {isSelected && <Check className="w-4 h-4 text-white" />}
                                 </div>
@@ -486,11 +487,10 @@ export default function NewOrderPage() {
                           <button
                             key={pkg.id}
                             onClick={() => togglePackage(pkg)}
-                            className={`w-full p-4 rounded-xl border text-left transition-all duration-200 ${
-                              isSelected
-                                ? "border-[#1b4dff] bg-blue-50 dark:bg-blue-900/20 shadow-sm"
-                                : "border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
-                            }`}
+                            className={`w-full p-4 rounded-xl border text-left transition-all duration-200 ${isSelected
+                              ? "border-[#1b4dff] bg-blue-50 dark:bg-blue-900/20 shadow-sm"
+                              : "border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+                              }`}
                           >
                             <div className="flex justify-between items-start">
                               <div>
@@ -551,11 +551,10 @@ export default function NewOrderPage() {
                     <button
                       key={p.value}
                       onClick={() => setPriority(p.value)}
-                      className={`px-3 py-2 rounded-lg border-2 text-sm font-medium transition-all ${
-                        priority === p.value 
-                          ? p.color + ' ring-2 ring-offset-1 dark:ring-offset-gray-800 ring-brand-500/30' 
-                          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400'
-                      }`}
+                      className={`px-3 py-2 rounded-lg border-2 text-sm font-medium transition-all ${priority === p.value
+                        ? p.color + ' ring-2 ring-offset-1 dark:ring-offset-gray-800 ring-brand-500/30'
+                        : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+                        }`}
                     >
                       {p.label}
                     </button>
@@ -633,6 +632,7 @@ export default function NewOrderPage() {
           onClose={() => setIsModalOpen(false)}
           test={selectedTest}
         />
+     
       </div>
     </div>
   );
