@@ -5,13 +5,13 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { usePatients } from '@/hooks/use-patients';
-import { useUpdateOrder, useOrderById } from '@/hooks/use-orders';
+import { useUpdateOrder, useOrder } from '@/hooks/use-orders';
 import { toast } from 'sonner';
 import { ArrowLeft, Save, Loader2, Search, X, AlertTriangle, Check, Eye } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth-store';
 import { useTestCatalog, useTestCatalogPackages } from '@/hooks/use-test-catalog';
 import TestDetailsModal from '@/components/detail-popup/TestDetailsModal';
-import { useReferringPhysician } from '@/hooks/useReferringPhysician';
+import { useReferringPhysician } from '@/hooks/use-referring-physician';
 import { usePermissions } from '@/hooks/permissions/usePermissions';
 import { PermissionDenied } from '@/components/PermissionGuard';
 
@@ -36,7 +36,7 @@ export default function UpdateOrderPage() {
   const { tenant, user } = useAuthStore();
   const updateOrder = useUpdateOrder();
 
-  const { data: orderData, isLoading: orderLoading } = useOrderById(orderId);
+  const { data: orderData, isLoading: orderLoading } = useOrder(orderId);
 
 
   // Patient search

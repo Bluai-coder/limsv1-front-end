@@ -8,7 +8,7 @@ import {
     FileText, Layout, RefreshCw, ChevronDown,
     AlertTriangle
 } from 'lucide-react';
-import { useAdminTemplates, useAdminTemplateStatistics, useDeleteAdminTemplate, useSetDefaultAdminTemplate, useDuplicateAdminTemplate, useToggleAdminTemplateActive } from '@/hooks/useAdminTemplates';
+import { useAdminTemplates, useAdminTemplateStatistics, useDeleteAdminTemplate, useSetDefaultAdminTemplate, useDuplicateAdminTemplate, useToggleAdminTemplateActive } from '@/hooks/use-admin-templates';
 import AdminTemplateModal from '@/components/AdminTemplateModal';
 import AdminTemplatePreview from '@/components/AdminTemplatePreview';
 

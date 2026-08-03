@@ -1888,6 +1888,7 @@ import {
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
+import LabelPrintModal from '@/components/labels/LabelPrintModal';
 
 const getStatusColor = (status) => {
   const statusMap = {
@@ -1941,6 +1942,7 @@ export default function SpecimenDetailsPopup({ specimen, isOpen, refetch, onClos
   const [isScanning, setIsScanning] = useState(false);
   const [cameraError, setCameraError] = useState(null);
   const [manualBarcode, setManualBarcode] = useState('');
+  const [showPrintModal, setShowPrintModal] = useState(false);
   const popupRef = useRef(null);
 
   useEffect(() => {
@@ -2080,50 +2082,6 @@ export default function SpecimenDetailsPopup({ specimen, isOpen, refetch, onClos
   };
 
   const handlePrintQR = () => {
-    if (!qrCodeUrl) return;
-
-    // New better print layout that centers and resizes the label to a real page
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Specimen Label - ${specimen.barcode}</title>
-          <style>
-            body {
-              display: flex;
-              justify-content: center;
-              align-items: center;
-              height: 100vh;
-              margin: 0;
-              font-family: Arial, sans-serif;
-              background: #fff;
-            }
-            .container {
-              text-align: center;
-              max-width: 100%;
-            }
-            img {
-              max-width: 90vw;
-              max-height: 90vh;
-              object-fit: contain;
-              box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            }
-            @media print {
-              body { margin: 0; padding: 0; }
-              img { max-width: 100%; max-height: 100%; box-shadow: none; }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <img src="${qrCodeUrl}" alt="Specimen Label" />
-          </div>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
-    
-    // Wait for image to load before triggering print
     printWindow.onload = () => {
         printWindow.print();
         // printWindow.close(); // Optional: close after printing
@@ -2752,6 +2710,21 @@ export default function SpecimenDetailsPopup({ specimen, isOpen, refetch, onClos
           )}
         </div>
       </div>
+      <LabelPrintModal
+        isOpen={showPrintModal}
+        onClose={() => setShowPrintModal(false)}
+        labelType="specimen"
+        labelData={{
+          specimenId: specimen?.specimen_id || specimen?.id,
+          patientName: specimen?.patient_name,
+          mrn: specimen?.mrn,
+          specimenType: specimen?.specimen_type,
+          collectionDate: specimen?.collection_date ? new Date(specimen.collection_date).toLocaleString() : null,
+          barcode: specimen?.barcode,
+          qrCodeUrl: qrCodeUrl,
+          priority: specimen?.priority
+        }}
+      />
     </>
   );
 }

@@ -79,6 +79,10 @@ export default function InvoiceDetailPage() {
     fetchBalance();
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
@@ -116,9 +120,35 @@ export default function InvoiceDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
+      <style>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          #invoice-print-area, #invoice-print-area * {
+            visibility: visible;
+          }
+          #invoice-print-area {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            margin: 0;
+            padding: 20px;
+          }
+          .print-hidden {
+            display: none !important;
+          }
+          /* Ensure gradient and colors print properly */
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+        }
+      `}</style>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-6 print-hidden">
           <button
             onClick={() => router.back()}
             className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900"
@@ -127,7 +157,11 @@ export default function InvoiceDetailPage() {
             Back
           </button>
           <div className="flex items-center gap-3">
-            <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition">
+            <button 
+              onClick={handlePrint}
+              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition"
+              title="Print Invoice"
+            >
               <PrinterIcon className="w-5 h-5" />
             </button>
             <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition">
@@ -140,7 +174,7 @@ export default function InvoiceDetailPage() {
         </div>
 
         {/* Invoice Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div id="invoice-print-area" className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
           {/* Header */}
           <div className="bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-6">
             <div className="flex items-start justify-between">
@@ -190,7 +224,7 @@ export default function InvoiceDetailPage() {
 
             {/* Payment Action */}
             {invoice.status !== "paid" && invoice.status !== "cancelled" && (
-              <div className="mb-8 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
+              <div className="mb-8 p-4 bg-yellow-50 border border-yellow-200 rounded-xl print-hidden">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-yellow-800">

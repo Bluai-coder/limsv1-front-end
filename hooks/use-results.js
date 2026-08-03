@@ -77,6 +77,10 @@ export const useUpdateResult = () => {
       queryClient.invalidateQueries({ queryKey: ["worklist"] });
       toast.success("Result updated successfully");
     },
+    onError: (error) => {
+      const msg = error?.response?.data?.message || error?.message || 'Operation failed';
+      toast.error(msg);
+    },
   });
 };
 
@@ -103,6 +107,10 @@ export const useAutoVerify = () => {
       } else {
         toast.warning(data.reason || "Auto-verification failed - review required");
       }
+    },
+    onError: (error) => {
+      const msg = error?.response?.data?.message || error?.message || 'Operation failed';
+      toast.error(msg);
     },
   });
 };
@@ -273,6 +281,10 @@ export const useCreateDeltaRule = () => {
       queryClient.invalidateQueries({ queryKey: ["delta-rules"] });
       toast.success("Delta rule created");
     },
+    onError: (error) => {
+      const msg = error?.response?.data?.message || error?.message || 'Operation failed';
+      toast.error(msg);
+    },
   });
 };
 
@@ -291,6 +303,10 @@ export const useUpdateDeltaRule = () => {
       queryClient.invalidateQueries({ queryKey: ["delta-rules"] });
       toast.success("Delta rule updated");
     },
+    onError: (error) => {
+      const msg = error?.response?.data?.message || error?.message || 'Operation failed';
+      toast.error(msg);
+    },
   });
 };
 
@@ -308,6 +324,10 @@ export const useDeleteDeltaRule = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["delta-rules"] });
       toast.success("Delta rule deleted");
+    },
+    onError: (error) => {
+      const msg = error?.response?.data?.message || error?.message || 'Operation failed';
+      toast.error(msg);
     },
   });
 };
@@ -340,6 +360,10 @@ export const useCreateAutoVerifyRule = () => {
       queryClient.invalidateQueries({ queryKey: ["auto-verify-rules"] });
       toast.success("Auto-verify rule created");
     },
+    onError: (error) => {
+      const msg = error?.response?.data?.message || error?.message || 'Operation failed';
+      toast.error(msg);
+    },
   });
 };
 
@@ -371,6 +395,10 @@ export const useCreateReflexRule = () => {
       queryClient.invalidateQueries({ queryKey: ["reflex-rules"] });
       toast.success("Reflex rule created");
     },
+    onError: (error) => {
+      const msg = error?.response?.data?.message || error?.message || 'Operation failed';
+      toast.error(msg);
+    },
   });
 };
 
@@ -399,12 +427,28 @@ export const useGenerateReport = (orderId) => {
     onSuccess: () => {
       toast.success("Report generated successfully");
     },
+    onError: (error) => {
+      const msg = error?.response?.data?.message || error?.message || 'Operation failed';
+      toast.error(msg);
+    },
   });
 };
 
 // =============================
 // SIGN REPORT
 // =============================
+export const useReport = (reportId) => {
+  return useQuery({
+    queryKey: ["report", reportId],
+    queryFn: async () => {
+      if (!reportId) return null;
+      const response = await api.get(`/reports/${reportId}`);
+      return response.data.data || response.data;
+    },
+    enabled: !!reportId,
+  });
+};
+
 export const useSignReport = () => {
   const queryClient = useQueryClient();
 
@@ -416,6 +460,10 @@ export const useSignReport = () => {
     onSuccess: (data, { reportId }) => {
       queryClient.invalidateQueries({ queryKey: ["report", reportId] });
       toast.success("Report signed successfully");
+    },
+    onError: (error) => {
+      const msg = error?.response?.data?.message || error?.message || 'Operation failed';
+      toast.error(msg);
     },
   });
 };
@@ -434,6 +482,10 @@ export const useDeliverReport = () => {
     onSuccess: (data, { reportId, channel }) => {
       queryClient.invalidateQueries({ queryKey: ["report", reportId] });
       toast.success(`Report sent via ${channel}`);
+    },
+    onError: (error) => {
+      const msg = error?.response?.data?.message || error?.message || 'Operation failed';
+      toast.error(msg);
     },
   });
 };

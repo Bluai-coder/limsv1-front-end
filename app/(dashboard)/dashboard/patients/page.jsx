@@ -8,6 +8,7 @@ import { Search, Plus, ChevronLeft, ChevronRight, Users, Pencil, Trash2, Eye } f
 import { useAuthStore } from '@/lib/auth-store';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
+import QueryError from '@/components/common/QueryError';
 import { PermissionDenied } from '@/components/PermissionGuard';
 import { usePermissions } from '@/hooks/permissions/usePermissions';
 import PatientDetailsPopup from '@/components/detail-popup/PatientDetailsPopup';
@@ -18,6 +19,7 @@ const DeleteConfirmModal = ({ patient, onConfirm, onCancel }) => {
 
   return (
     <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50">
+      {isError && <QueryError error={error} onRetry={refetch} className="mb-4" />}
       <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-md w-full mx-4 shadow-xl">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
@@ -92,7 +94,7 @@ export default function PatientsPage() {
     return <PermissionDenied resource="Patients" action="read" />;
   }
 
-  const { data, isLoading, refetch } = usePatients({
+  const { data, isLoading, isError, error, refetch } = usePatients({
     tenantId: tenant?.id || "",
     q: search || undefined,
     page,

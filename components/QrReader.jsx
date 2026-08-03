@@ -116,7 +116,18 @@ const startCamera = async () => {
   }
 
   return (
-    <div className="relative w-full bg-black rounded-xl overflow-hidden" style={{ aspectRatio: '16/9' }}>
+    <div className="relative w-full bg-black rounded-xl overflow-hidden shadow-2xl" style={{ aspectRatio: '16/9' }}>
+      <style>{`
+        @keyframes scan-beam {
+          0% { top: 0%; opacity: 0; }
+          10% { opacity: 1; }
+          90% { opacity: 1; }
+          100% { top: 100%; opacity: 0; }
+        }
+        .animate-scan-beam {
+          animation: scan-beam 2.5s infinite linear;
+        }
+      `}</style>
       <video
         ref={videoRef}
         className="absolute inset-0 w-full h-full object-cover"
@@ -125,40 +136,63 @@ const startCamera = async () => {
       />
       <canvas
         ref={canvasRef}
-        className="absolute inset-0 w-full h-full"
+        className="absolute inset-0 w-full h-full pointer-events-none"
       />
 
-      {/* Scanning overlay */}
-      {status === 'scanning' && (
+      {/* Dark semi-transparent overlay */}
+      <div className="absolute inset-0 pointer-events-none flex flex-col">
+        <div className="flex-1 bg-black/50 backdrop-blur-[2px]" />
+        <div className="flex justify-between items-stretch h-64">
+          <div className="flex-1 bg-black/50 backdrop-blur-[2px]" />
+          <div className="w-64 relative border border-white/20">
+            {/* Cutout area */}
+          </div>
+          <div className="flex-1 bg-black/50 backdrop-blur-[2px]" />
+        </div>
+        <div className="flex-1 bg-black/50 backdrop-blur-[2px]" />
+      </div>
+
+      {/* Scanning overlay frame */}
+      {status === 'scanning' && !lastScan && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="w-48 h-48 relative">
+          <div className="w-64 h-64 relative">
             {/* Corner brackets */}
-            <div className="absolute top-0 left-0 w-8 h-8 border-l-4 border-t-4 border-white rounded-tl" />
-            <div className="absolute top-0 right-0 w-8 h-8 border-r-4 border-t-4 border-white rounded-tr" />
-            <div className="absolute bottom-0 left-0 w-8 h-8 border-l-4 border-b-4 border-white rounded-bl" />
-            <div className="absolute bottom-0 right-0 w-8 h-8 border-r-4 border-b-4 border-white rounded-br" />
+            <div className="absolute top-0 left-0 w-8 h-8 border-l-4 border-t-4 border-[#1b4dff] rounded-tl shadow-[0_0_15px_#1b4dff] animate-pulse" />
+            <div className="absolute top-0 right-0 w-8 h-8 border-r-4 border-t-4 border-[#1b4dff] rounded-tr shadow-[0_0_15px_#1b4dff] animate-pulse" />
+            <div className="absolute bottom-0 left-0 w-8 h-8 border-l-4 border-b-4 border-[#1b4dff] rounded-bl shadow-[0_0_15px_#1b4dff] animate-pulse" />
+            <div className="absolute bottom-0 right-0 w-8 h-8 border-r-4 border-b-4 border-[#1b4dff] rounded-br shadow-[0_0_15px_#1b4dff] animate-pulse" />
+            
             {/* Scanning line animation */}
-            <div className="absolute inset-x-1 top-0 h-0.5 bg-emerald-400 animate-bounce" style={{ animationDuration: '2s' }} />
+            <div className="absolute left-0 right-0 h-[2px] bg-[#1b4dff] shadow-[0_0_10px_#1b4dff] animate-scan-beam" />
           </div>
         </div>
       )}
 
-      {status === 'starting' && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/60">
-          <p className="text-white text-sm">Starting camera...</p>
+      {/* Success flash overlay */}
+      {lastScan && (
+        <div className="absolute inset-0 bg-green-500/30 flex items-center justify-center pointer-events-none transition-all duration-300">
+          <div className="bg-green-500 text-white px-6 py-3 rounded-full font-bold shadow-lg flex items-center gap-2 transform scale-110">
+            ✓ Code detected!
+          </div>
         </div>
       )}
+
+      {/* Status text */}
+      <div className="absolute bottom-6 inset-x-0 text-center pointer-events-none">
+        {status === 'starting' && <p className="text-white bg-black/60 px-4 py-2 rounded-full inline-block text-sm">Starting camera...</p>}
+        {status === 'scanning' && !lastScan && <p className="text-white bg-black/60 px-4 py-2 rounded-full inline-block text-sm">Point camera at QR code / Barcode</p>}
+        {status === 'scanning' && lastScan && <p className="text-green-400 bg-black/60 px-4 py-2 rounded-full inline-block font-medium shadow-lg">✓ Code detected!</p>}
+      </div>
 
       {status === 'error' && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-red-900/80 p-4">
-          <p className="text-white text-sm font-medium">Camera not available</p>
-          <p className="text-red-200 text-xs mt-1">Please use USB scanner or check permissions</p>
-        </div>
-      )}
-
-      {lastScan && (
-        <div className="absolute bottom-0 inset-x-0 bg-emerald-500/90 p-3 text-center">
-          <p className="text-white text-sm font-medium">✓ Code detected! Processing...</p>
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900/95 p-6 text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+            <svg className="w-8 h-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+          <p className="text-white text-lg font-medium">Camera Access Denied</p>
+          <p className="text-gray-400 text-sm mt-2 max-w-xs">Please allow camera permissions in your browser settings to scan codes.</p>
         </div>
       )}
     </div>

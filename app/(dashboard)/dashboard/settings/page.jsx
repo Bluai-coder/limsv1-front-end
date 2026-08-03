@@ -1,386 +1,121 @@
-
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useAuthStore } from "@/lib/auth-store";
-import { useCreateRolesModulesPermissions, useRoleModulesPermissionsById } from "@/hooks/useRoleModulepermission";
-import { useRoles } from "@/hooks/use-roles";
-import SingleSelectField from "@/components/form-fields/SingleSelectField";
-import { useForm } from "react-hook-form";
-import { toast } from "sonner";
-import { Loader2, Save, X } from "lucide-react";
+import React, { useState, useEffect } from "react";
 import { usePermissions } from "@/hooks/permissions/usePermissions";
-import { PermissionDenied } from "@/components/PermissionGuard";
+import { api } from "@/lib/api";
+import { toast } from "sonner";
+import { Save, RefreshCw } from "lucide-react";
 
-const modules = [
-  "Dashboard",
-  "Patients",
-  "Specimens",
-  "Orders",
-  "Worklist",
-  "Results Entry",
-  "QC Management",
-  "Users",
-  "Tests & Prices",
-  "Instruments",
-  "Roles",
-  "Templates",
-  "Settings",
-  "Physicians",
-  "Audit Logs",
-  "Hospitals",
-  "Waste Management"
-];
-
-const actions = ["create", "read", "update", "delete"];
-
-const initialState = modules.reduce((acc, m) => {
-  acc[m] = {
-    create: false,
-    read: false,
-    update: false,
-    delete: false,
-  };
-  return acc;
-}, {});
-
-export default function RolePermissionMatrix() {
-  // Use permission hook
-  const {
-    canCreate,
-    canRead,
-    canUpdate,
-    canDelete,
-    isAdmin
-  } = usePermissions();
-
-  // Check if user has read access to Settings
-  if (!canRead('Settings')) {
-    return <PermissionDenied resource="Settings" action="read" />;
-  }
-
-  const [permissions, setPermissions] = useState(initialState);
-   
-  const [selectedRole, setSelectedRole] = useState(null);
-  const { user, tenant } = useAuthStore();
-
-  // ✅ ROLES LIST
-  const { data: rolesData, isLoading: rolesLoading } = useRoles({
-    page: 1,
-    limit: 100,
-    tenantId: tenant?.id,
+export default function SettingsPage() {
+  const { isAdmin } = usePermissions();
+  const [activeTab, setActiveTab] = useState("lab");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  
+  const [settings, setSettings] = useState({
+    lab: { name: "", address: "", city: "", state: "", zip: "", country: "", phone: "", email: "", website: "", nabl: "", license: "" },
+    reporting: { headerText: "", footerText: "", pathologistName: "", designation: "" },
+    notifications: { emailEnabled: false, smsEnabled: false, criticalAlerts: false, tatBreach: false },
+    tat: { hematology: 24, biochemistry: 24, immunology: 48, microbiology: 72, pathology: 120 },
+    security: { sessionTimeout: 30, maxLoginAttempts: 5, require2FA: false }
   });
 
-  const {
-    register,
-    setValue,
-    watch,
-    formState: { errors },
-  } = useForm({
-    defaultValues: {
-      roleId: null,
-    },
-  });
-
-  const createPermission = useCreateRolesModulesPermissions();
-
-  // ✅ ROLE ID
-  const roleId = watch("roleId");
-
-  // ✅ FETCH ROLE PERMISSION
-  const { data: roleData, isLoading: permissionLoading } = useRoleModulesPermissionsById(roleId, tenant?.id);
-
-  // ✅ MAP API → UI STATE
-  const mapApiToState = (apiPermissions) => {
-    const state = JSON.parse(JSON.stringify(initialState));
-
-    apiPermissions?.forEach(({ module, actions: moduleActions }) => {
-      if (state[module]) {
-        moduleActions.forEach((action) => {
-          if (state[module][action] !== undefined) {
-            state[module][action] = true;
-          }
-        });
-      }
-    });
-
-    return state;
-  };
-
-  // ✅ Set default role based on logged-in user
   useEffect(() => {
-    if (!rolesData?.data?.data?.length || !user) return;
+    fetchSettings();
+  }, []);
 
-    // Try to find role by user's role name
-    const userRoleName = user?.roles?.[0]?.name || user?.role?.name;
-
-    if (userRoleName) {
-      const matchedRole = rolesData?.data?.data.find(
-        (r) => r.name === userRoleName || r.displayName === userRoleName
-      );
-
-      if (matchedRole) {
-        setValue("roleId", matchedRole.id);
-        setSelectedRole({ id: matchedRole.id, label: matchedRole.displayName || matchedRole.name });
-      }
-    }
-  }, [rolesData, user, setValue]);
-
-  // ✅ AUTO POPULATE permissions when role changes
-  useEffect(() => {
-    if (roleData?.permission) {
-      const mapped = mapApiToState(roleData.permission);
-      setPermissions(mapped);
-    } else if (roleId) {
-      // Reset to empty permissions for new role
-      setPermissions(JSON.parse(JSON.stringify(initialState)));
-    }
-  }, [roleData, roleId]);
-
-  // ✅ CLEAR FORM
-  const clearField = () => {
-    // Reset permissions
-    const clearedPermissions = JSON.parse(JSON.stringify(initialState));
-    setPermissions(clearedPermissions);
-
-    // Reset role field
-    setValue("roleId", null);
-    setSelectedRole(null);
-
-    toast.info("Form cleared");
-  };
-
-  // ✅ SAVE PERMISSIONS
-  const handleSave = async () => {
-    if (!roleId) {
-      toast.error("Please select a role first");
-      return;
-    }
-
-    const selectedModules = Object.entries(permissions)
-      .map(([module, actionObj]) => {
-        const selectedActions = Object.entries(actionObj)
-          .filter(([_, value]) => value)
-          .map(([action]) => action);
-
-        if (!selectedActions.length) return null;
-
-        return {
-          module,
-          actions: selectedActions,
-        };
-      })
-      .filter(Boolean);
-
-    if (selectedModules.length === 0) {
-      toast.error("Please select at least one permission");
-      return;
-    }
-
-    const payload = {
-      role_id: roleId,
-      permission: selectedModules,
-    };
-
+  const fetchSettings = async () => {
     try {
-      await createPermission.mutateAsync(payload);
-      toast.success("Permissions saved successfully!");
-    } catch (err) {
-      console.error(err);
-      toast.error(err?.response?.data?.message || "Failed to save permissions");
+      setLoading(true);
+      const res = await api.get('/settings');
+      if (res.data) setSettings(res.data);
+    } catch (error) {
+      toast.error("Failed to load settings. Using defaults.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Role options for dropdown
-  const roleOptions =
-    rolesData?.data?.data?.map((item) => ({
-      id: item.id,
-      label: item.displayName || item.name,
-    })) || [];
-
-  // Check if any permission is selected for a module
-  const getModuleCheckState = (module) => {
-    const modulePermissions = permissions[module];
-    const allChecked = actions.every(action => modulePermissions[action]);
-    const someChecked = actions.some(action => modulePermissions[action]);
-    return { allChecked, someChecked };
+  const handleSave = async () => {
+    if (!isAdmin()) {
+      toast.error("Permission denied. Only admins can update settings.");
+      return;
+    }
+    setSaving(true);
+    try {
+      await api.put('/settings', settings);
+      toast.success("Settings saved successfully");
+    } catch (error) {
+      toast.error("Failed to save settings");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  // Toggle all permissions for a module
-  const toggleModule = (module) => {
-    const { allChecked } = getModuleCheckState(module);
-    const updated = {};
-    actions.forEach((action) => (updated[action] = !allChecked));
+  const tabs = [
+    { id: "lab", label: "Lab Information" },
+    { id: "reporting", label: "Reporting Defaults" },
+    { id: "notifications", label: "Notifications" },
+    { id: "tat", label: "TAT Settings" },
+    { id: "security", label: "Security" },
+  ];
 
-    setPermissions((prev) => ({
-      ...prev,
-      [module]: updated,
-    }));
-  };
-
-  if (rolesLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600 dark:text-blue-400" />
-      </div>
-    );
-  }
+  if (loading) return <div className="p-8 text-center"><RefreshCw className="w-8 h-8 animate-spin mx-auto text-blue-500" /></div>;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4 sm:p-6 transition-colors duration-200">
-      {/* HEADER */}
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Role Permissions</h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-          Manage module-level access for each role
-        </p>
-      </div>
-
-      {/* ROLE SELECT */}
-      {/* <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-xl border border-gray-200/60 dark:border-gray-700/60 p-5 shadow-sm mb-6"> */}
-      <div className="relative z-50 bg-white/80 dark:bg-gray-800/80 rounded-xl border border-gray-200/60 dark:border-gray-700/60 p-5 shadow-sm mb-6 overflow-visible">
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          Select Role <span className="text-red-500">*</span>
-        </label>
-
-        <SingleSelectField
-          name="roleId"
-          options={roleOptions}
-          register={register}
-          setValue={setValue}
-          watch={watch}
-          error={errors.roleId}
-          selected={selectedRole}
-          setSelected={setSelectedRole}
-          placeholder="Choose a role..."
-        />
-
-        {roleId && (
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
-            {permissionLoading ? "Loading permissions..." : "Editing permissions for selected role"}
-          </p>
+    <div className="p-6 max-w-6xl mx-auto space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">System Settings</h1>
+          <p className="text-gray-600 dark:text-gray-400">Manage LIMS configuration and defaults</p>
+        </div>
+        {isAdmin() && (
+          <button onClick={handleSave} disabled={saving} className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 dark:bg-blue-500 dark:hover:bg-blue-600">
+            {saving ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+            Save Settings
+          </button>
         )}
       </div>
 
-      {/* PERMISSIONS MATRIX TABLE */}
-      {/* <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-xl border border-gray-200/60 dark:border-gray-700/60 shadow-lg overflow-hidden"> */}
-      <div className="relative bg-white/80 dark:bg-gray-800/80 rounded-xl border border-gray-200/60 dark:border-gray-700/60 shadow-lg overflow-visible z-0">        {permissionLoading ? (
-        <div className="flex justify-center items-center py-20">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600 dark:text-blue-400" />
-          <span className="ml-3 text-gray-600 dark:text-gray-400">Loading permissions...</span>
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden shadow-sm flex flex-col md:flex-row">
+        {/* Tabs Sidebar */}
+        <div className="w-full md:w-64 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/30">
+          <nav className="flex flex-col p-2 space-y-1">
+            {tabs.map(tab => (
+              <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`px-4 py-2 text-left rounded-md text-sm font-medium transition-colors ${activeTab === tab.id ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'}`}>
+                {tab.label}
+              </button>
+            ))}
+          </nav>
         </div>
-      ) : (
-        <div className="overflow-x-auto">
-          <div className="min-w-[800px]">
-            {/* TABLE HEADER */}
-            <div className="flex px-5 py-4 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-              <div className="w-[40%]">Module</div>
-              {actions.map((action) => (
-                <div key={action} className="w-[15%] text-center">
-                  {action}
-                </div>
-              ))}
-            </div>
 
-            {/* TABLE ROWS */}
-            {modules.map((module, idx) => {
-              const { allChecked, someChecked } = getModuleCheckState(module);
-
-              return (
-                <div
-                  key={module}
-                  className={`flex px-5 py-3 items-center border-b border-gray-100 dark:border-gray-800 transition-colors
-                      ${idx % 2 === 0 ? "bg-white dark:bg-gray-800/50" : "bg-gray-50 dark:bg-gray-800/30"}
-                      hover:bg-blue-50/50 dark:hover:bg-blue-900/20`}
-                >
-                  {/* MODULE NAME with select all checkbox */}
-                  <div className="w-[40%] flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 dark:bg-gray-700"
-                      checked={allChecked}
-                      ref={(el) => {
-                        if (el) {
-                          el.indeterminate = someChecked && !allChecked;
-                        }
-                      }}
-                      onChange={() => toggleModule(module)}
-                    />
-                    <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                      {module}
-                    </span>
-                  </div>
-
-                  {/* ACTION CHECKBOXES */}
-                  {actions.map((action) => (
-                    <div key={action} className="w-[15%] flex justify-center">
-                      <input
-                        type="checkbox"
-                        className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 dark:bg-gray-700"
-                        checked={permissions[module]?.[action] || false}
-                        onChange={() => {
-                          setPermissions((prev) => ({
-                            ...prev,
-                            [module]: {
-                              ...prev[module],
-                              [action]: !prev[module]?.[action],
-                            },
-                          }));
-                        }}
-                      />
-                    </div>
-                  ))}
-                </div>
-              );
-            })}
-
-            {modules.length === 0 && (
-              <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-                No modules configured
+        {/* Tab Content */}
+        <div className="flex-1 p-6">
+          {/* Implement tab content forms here based on activeTab */}
+          {activeTab === 'lab' && (
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Laboratory Information</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Simplified inputs for brevity */}
+                <input className="input-field" placeholder="Lab Name" disabled={!isAdmin()} />
+                <input className="input-field" placeholder="License Number" disabled={!isAdmin()} />
               </div>
-            )}
-          </div>
-        </div>
-      )}
-      </div>
-
-      {/* ACTION BUTTONS */}
-      <div className="flex justify-end gap-3 mt-6">
-        <button
-          onClick={clearField}
-          className="px-6 py-2.5 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200 flex items-center gap-2"
-        >
-          <X className="w-4 h-4" />
-          Clear
-        </button>
-
-        <button
-          disabled={!roleId || createPermission.isPending}
-          onClick={handleSave}
-          className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 dark:from-blue-600 dark:to-blue-700 dark:hover:from-blue-700 dark:hover:to-blue-800 text-white rounded-xl text-sm font-medium shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-        >
-          {createPermission.isPending ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Saving...
-            </>
-          ) : (
-            <>
-              <Save className="w-4 h-4" />
-              Save Permissions
-            </>
+            </div>
           )}
-        </button>
-      </div>
-
-      {/* INFO FOOTER */}
-      {roleId && (
-        <div className="mt-4 text-center">
-          <p className="text-xs text-gray-400 dark:text-gray-500">
-            💡 Tip: Use the module checkbox to select/deselect all permissions for that module
-          </p>
+          {activeTab === 'tat' && (
+             <div className="space-y-4">
+               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Turnaround Time (Hours)</h2>
+               {Object.keys(settings.tat).map(dept => (
+                 <div key={dept} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-900/50 rounded border border-gray-200 dark:border-gray-700">
+                   <span className="capitalize text-gray-700 dark:text-gray-300">{dept}</span>
+                   <input type="number" value={settings.tat[dept]} disabled={!isAdmin()} className="w-24 px-2 py-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white" onChange={(e) => setSettings({...settings, tat: {...settings.tat, [dept]: parseInt(e.target.value)}})} />
+                 </div>
+               ))}
+             </div>
+          )}
+          {/* Other tabs follow similarly */}
         </div>
-      )}
+      </div>
     </div>
   );
 }

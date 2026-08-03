@@ -6,7 +6,7 @@ import {
     Barcode, QrCode, Loader2, CheckCircle,
     AlertTriangle, Download, Printer
 } from 'lucide-react';
-import { useCreateWaste, useGenerateBarcode, useGenerateQR, useGenerateLabel } from '@/hooks/useWaste';
+import { useCreateWaste, useGenerateBarcode, useGenerateQR, useGenerateLabel } from '@/hooks/use-waste';
 import { toast } from 'sonner';
 
 export default function CreateWasteModal({ onClose, onSuccess }) {

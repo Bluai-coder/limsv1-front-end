@@ -173,6 +173,7 @@
 // ============================================================
 'use client';
 
+import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -184,6 +185,7 @@ import { useCreateRole } from "@/hooks/use-roles";
 import { useAuthStore } from '@/lib/auth-store';
 import { usePermissions } from '@/hooks/permissions/usePermissions';
 import { PermissionDenied } from '@/components/PermissionGuard';
+import PermissionBuilder from '@/components/roles/PermissionBuilder';
 
 export default function NewRolePage() {
   // Use permission hook
@@ -203,6 +205,7 @@ export default function NewRolePage() {
   const router = useRouter();
   const createRole = useCreateRole();
   const { isAuthenticated, user, tenant } = useAuthStore();
+  const [permissions, setPermissions] = React.useState([]);
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm();
 
@@ -213,6 +216,7 @@ export default function NewRolePage() {
         name: data.name,
         displayName: data.displayName,
         description: data.description,
+        permissions: permissions,
       };
       console.log("payloadpayload", payload)
       const role = await createRole.mutateAsync(payload);
@@ -292,6 +296,16 @@ export default function NewRolePage() {
                   placeholder="Handles billing and invoices"
                 />
               </div>
+            </div>
+          </div>
+
+          {/* Permission Builder */}
+          <div className={cardClass}>
+            <div className="p-6">
+              <PermissionBuilder 
+                initialPermissions={permissions}
+                onChange={setPermissions}
+              />
             </div>
           </div>
 

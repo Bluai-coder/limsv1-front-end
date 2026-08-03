@@ -21,7 +21,7 @@ import {
   useMarkNotificationAsRead,
   useMarkAllNotificationsAsRead,
   useDeleteNotification
-} from '@/hooks/useNotifications';
+} from '@/hooks/use-notifications';
 import { useAuthStore } from '@/lib/auth-store';
 
 export default function NotificationsPage() {

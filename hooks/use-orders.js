@@ -83,25 +83,6 @@ export function useOrderStats() {
 }
 
 
-
-
-
-
-
-// In your use-orders hook file
-
-// Fetch order by ID
-export const useOrderById = (id) => {
-  return useQuery({
-    queryKey: ['order', id],
-    queryFn: async () => {
-      const response = await api.get(`/orders/${id}`);
-      return response.data;
-    },
-    enabled: !!id,
-  });
-};
-
 // Update order
 export const useUpdateOrder = () => {
   const queryClient = useQueryClient();

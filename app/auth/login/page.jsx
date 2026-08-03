@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { useAuthStore } from '@/lib/auth-store';
 import { adminApi, authApi } from '@/lib/api';
 import { Eye, EyeOff, Building2, Settings, ArrowRight } from 'lucide-react';
@@ -80,12 +81,14 @@ const LabTenantLoginForm = ({
 }) => (
   <div className="min-h-screen flex flex-col lg:flex-row">
     {/* LEFT PANEL */}
-    <div className="hidden md:flex md:w-full lg:w-1/2 bg-[#1b4dff] text-white">
+    <div className="hidden md:flex md:w-full lg:w-1/2 bg-blue-600 text-white">
       <div className="flex flex-col justify-center px-6 sm:px-10 lg:px-16 py-12 w-full">
         <div className="h-18 flex items-center gap-3 border-gray-200 w-[130px]">
-          <img
+          <Image
             src="/blu-login.png"
             alt="BluLIMS"
+            width={180}
+            height={96}
             className="h-8 sm:h-9 md:h-24 w-auto max-w-[180px] object-contain"
           />
         </div>
@@ -116,9 +119,11 @@ const LabTenantLoginForm = ({
 
         {/* Mobile Logo */}
         <div className="md:hidden flex justify-center mb-6">
-          <img
+          <Image
             src="/blu-lims.png"
             alt="BluLIMS"
+            width={180}
+            height={64}
             className="h-8 sm:h-9 md:h-16 w-auto max-w-[180px] object-contain"
           />
         </div>
@@ -140,13 +145,15 @@ const LabTenantLoginForm = ({
           <input
             value={tenant}
             type="text"
+            required
             onChange={(e) => setTenant(e.target.value)}
             placeholder="Subdomain"
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <input
-            type="text"
+            type="email"
             value={email}
+            required
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Email"
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -155,6 +162,7 @@ const LabTenantLoginForm = ({
             <input
               type={showPassword ? 'text' : 'password'}
               value={password}
+              required
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Password"
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
@@ -170,7 +178,7 @@ const LabTenantLoginForm = ({
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-[#1b4dff] text-white rounded-lg font-medium transition disabled:opacity-50"
+            className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium transition disabled:opacity-50"
           >
             {loading ? "Signing in..." : "Sign in"}
           </button>
@@ -195,12 +203,14 @@ const LabManagementLoginForm = ({
 }) => (
   <div className="min-h-screen flex flex-col lg:flex-row">
     {/* LEFT PANEL */}
-    <div className="hidden md:flex md:w-full lg:w-1/2 bg-gradient-to-br from-[#8800ff] to-[#000000] text-white">
+    <div className="hidden md:flex md:w-full lg:w-1/2 bg-gradient-to-br from-purple-600 to-gray-900 text-white">
       <div className="flex flex-col justify-center px-6 sm:px-10 lg:px-16 py-12 w-full">
         <div className="h-18 flex items-center gap-3 w-[130px]">
-          <img
+          <Image
             src="/blu-login.png"
             alt="BluLIMS"
+            width={180}
+            height={96}
             className="h-8 sm:h-9 md:h-24 w-auto max-w-[180px] object-contain brightness-0 invert"
           />
         </div>
@@ -231,9 +241,11 @@ const LabManagementLoginForm = ({
 
         {/* Mobile Logo */}
         <div className="md:hidden flex justify-center mb-6">
-          <img
+          <Image
             src="/blu-lims.png"
             alt="BluLIMS"
+            width={180}
+            height={64}
             className="h-8 sm:h-9 md:h-16 w-auto max-w-[180px] object-contain"
           />
         </div>
@@ -253,7 +265,9 @@ const LabManagementLoginForm = ({
 
         <form onSubmit={onSubmit} className="space-y-5 mt-6">
           <input
+            type="email"
             value={adminEmail}
+            required
             onChange={(e) => setAdminEmail(e.target.value)}
             placeholder="Admin Email"
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -262,6 +276,7 @@ const LabManagementLoginForm = ({
             <input
               type={showPassword ? 'text' : 'password'}
               value={adminPassword}
+              required
               onChange={(e) => setAdminPassword(e.target.value)}
               placeholder="Password"
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 pr-10"
@@ -277,7 +292,7 @@ const LabManagementLoginForm = ({
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-gradient-to-br from-[#8800ff] to-[#000000] hover:from-[#7700e6] hover:to-[#000000] text-white rounded-lg font-medium transition disabled:opacity-50"
+            className="w-full py-3 bg-gradient-to-br from-purple-600 to-gray-900 hover:from-purple-700 hover:to-gray-900 text-white rounded-lg font-medium transition disabled:opacity-50"
           >
             {loading ? "Signing in..." : "Sign in as Admin"}
           </button>
@@ -303,7 +318,6 @@ export default function LoginPage() {
   // Lab Management Login (Admin/Super Admin) form fields
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
-  const [adminSecretKey, setAdminSecretKey] = useState('');
 
   // Common states
   const [showPassword, setShowPassword] = useState(false);
@@ -332,7 +346,6 @@ export default function LoginPage() {
     setTenant('');
     setAdminEmail('');
     setAdminPassword('');
-    setAdminSecretKey('');
   }, []);
 
   // ================= LAB TENANT LOGIN =================

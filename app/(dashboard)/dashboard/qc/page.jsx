@@ -19,6 +19,7 @@ import {
 } from '@/hooks/use-qc';
 // import LeveyJenningsTab from '@/components/LeveyJenningsTab';
 import { usePermissions } from '@/hooks/permissions/usePermissions';
+import QueryError from '@/components/common/QueryError';
 import { PermissionDenied } from '@/components/PermissionGuard';
 
 // ==================== Helper Functions ====================
@@ -77,7 +78,7 @@ function QcDashboardTab(props) {
     handleRefresh,
     setShowEnterModal,
     setShowLotModal,
-    handleUnlockEvent
+    handleUnlockEvent,isError 
   } = props;
 
   const statCards = [
@@ -120,6 +121,7 @@ function QcDashboardTab(props) {
       </div>
 
       {/* Filter Bar */}
+      {isError && <QueryError error={error} onRetry={refetch} className="mb-4" />}
       <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-xl border border-gray-200/60 dark:border-gray-700/60 p-4 mb-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-4 flex-wrap">
@@ -732,6 +734,7 @@ export default function QcDashboardPage() {
             setShowEnterModal={setShowEnterModal}
             setShowLotModal={setShowLotModal}
             handleUnlockEvent={handleUnlockEvent}
+            isError={enterQcResult.isError || unlockQc.isError || registerLot.isError}
           />
         )}
         {activeTab === 1 && <LeveyJenningsTab />}

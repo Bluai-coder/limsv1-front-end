@@ -43,7 +43,7 @@ export const useNotificationCounts = (userId) => {
             return response.data;
         },
         staleTime: 10000,
-        refetchInterval: 30000, // Refetch every 30 seconds to update badge
+        refetchInterval: 60000, // Refetch every 60 seconds (aligned with notifications polling)
     });
 };
 
@@ -156,7 +156,6 @@ export const useMarkNotificationAsRead = () => {
 
     return useMutation({
         mutationFn: async ({ notificationId, userId }) => {  // Changed to object parameter
-            console.log("userId:", userId);
             const response = await api.put(`/notifications/${notificationId}/read?userId=${userId}`);
             return response.data;
         },

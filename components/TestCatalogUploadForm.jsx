@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'sonner';
-import { useUploadAdminFile, useAdminUploads, useDeleteAdminUpload, useAdminUploadData } from '@/hooks/useAdminFileUpload';
+import { useUploadAdminFile, useAdminUploads, useDeleteAdminUpload, useAdminUploadData } from '@/hooks/use-admin-file-upload';
 import AdminAddTestModal from './AdminAddTestModal';
 
 // View Data Modal Component

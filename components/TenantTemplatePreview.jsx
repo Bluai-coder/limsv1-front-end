@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { X, Loader2, Download, Printer } from 'lucide-react';
-import { usePreviewtenantTemplate } from '../hooks/useTenantTemplatesForPdf';
+import { usePreviewtenantTemplate } from '../hooks/use-tenant-templates-pdf';
 
 export default function TenantTemplatePreview({ isOpen, onClose, template }) {
     const [previewUrl, setPreviewUrl] = useState(null);

@@ -19,6 +19,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/lib/auth-store';
 import OrderDetailsPopup from '@/components/detail-popup/OrderDetailsPopup';
+import QueryError from '@/components/common/QueryError';
 import { PermissionDenied } from '@/components/PermissionGuard';
 import { usePermissions } from '@/hooks/permissions/usePermissions';
 
@@ -145,7 +146,7 @@ export default function OrdersPage() {
     return <PermissionDenied resource="Orders" action="read" />;
   }
 
-  const { data, isLoading, refetch } = useOrders({
+  const { data, isLoading, isError, error, refetch } = useOrders({
     orderNumber: search || undefined,
     status: statusFilter || undefined,
     page,
@@ -280,6 +281,7 @@ export default function OrdersPage() {
       </div>
 
       {/* Table */}
+      {isError && <QueryError error={error} onRetry={refetch} className="mb-4" />}
       <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-[1050px] w-full text-sm">

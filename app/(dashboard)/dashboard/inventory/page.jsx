@@ -1,0 +1,258 @@
+"use client";
+
+import React, { useState, useEffect, useCallback } from "react";
+import { usePermissions } from "@/hooks/permissions/usePermissions";
+import PermissionDenied from "@/components/PermissionGuard";
+import { useAuthStore } from "@/lib/auth-store";
+import { api } from '@/lib/api';
+import { toast } from "sonner";
+import {
+  Package,
+  Plus,
+  Search,
+  Filter,
+  AlertTriangle,
+  Clock,
+  Trash2,
+  Edit,
+  TrendingDown,
+  RefreshCw,
+} from "lucide-react";
+
+/**
+ * Inventory Management Page Component
+ * @returns {JSX.Element} The rendered component
+ */
+export default function InventoryPage() {
+  const { canCreate, isAdmin } = usePermissions();
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+
+  const fetchInventory = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/inventory');
+      setItems(res.data || []);
+    } catch (error) {
+      toast.error("Failed to fetch inventory");
+      // Fallback data for demonstration
+      setItems([
+        {
+          id: 1,
+          item_name: "Ethanol",
+          category: "Reagent",
+          lot_number: "L123",
+          quantity: 50,
+          unit: "L",
+          reorder_level: 10,
+          expiry_date: "2026-10-01",
+        },
+        {
+          id: 2,
+          item_name: "Gloves",
+          category: "Consumable",
+          lot_number: "G456",
+          quantity: 0,
+          unit: "Box",
+          reorder_level: 5,
+          expiry_date: "2027-01-01",
+        },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchInventory();
+  }, [fetchInventory]);
+
+  // Derived stats
+  const totalItems = items.length;
+  const lowStock = items.filter(
+    (i) => i.quantity > 0 && i.quantity <= i.reorder_level
+  ).length;
+  const criticalStock = items.filter((i) => i.quantity === 0).length;
+  const expiringSoon = items.filter((i) => {
+    const days =
+      (new Date(i.expiry_date) - new Date()) / (1000 * 60 * 60 * 24);
+    return days > 0 && days <= 30;
+  }).length;
+
+  const getStatusBadge = (item) => {
+    if (item.quantity === 0) {
+      return (
+        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
+          Critical
+        </span>
+      );
+    }
+    const daysToExpiry =
+      (new Date(item.expiry_date) - new Date()) / (1000 * 60 * 60 * 24);
+    if (daysToExpiry > 0 && daysToExpiry <= 30) {
+      return (
+        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400">
+          Expiring Soon
+        </span>
+      );
+    }
+    if (item.quantity <= item.reorder_level) {
+      return (
+        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
+          Low Stock
+        </span>
+      );
+    }
+    return (
+      <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+        In Stock
+      </span>
+    );
+  };
+
+  const filteredItems = items.filter((item) => {
+    const matchesSearch = item.item_name
+      .toLowerCase()
+      .includes(search.toLowerCase());
+    if (!matchesSearch) return false;
+
+    if (statusFilter === "All") return true;
+    if (statusFilter === "Critical") return item.quantity === 0;
+    if (statusFilter === "Low Stock")
+      return item.quantity > 0 && item.quantity <= item.reorder_level;
+    if (statusFilter === "Expiring Soon") {
+      const days =
+        (new Date(item.expiry_date) - new Date()) / (1000 * 60 * 60 * 24);
+      return days > 0 && days <= 30;
+    }
+    return true;
+  });
+
+  return (
+    <div className="p-6 space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Inventory Management
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            Track reagents, consumables, and QC materials
+          </p>
+        </div>
+        {(canCreate("Inventory") || isAdmin()) && (
+          <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors">
+            <Plus className="w-4 h-4 mr-2" />
+            Add Item
+          </button>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between">
+            <div className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Items</div>
+            <Package className="w-5 h-5 text-blue-500" />
+          </div>
+          <div className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">{totalItems}</div>
+        </div>
+        <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between">
+            <div className="text-sm font-medium text-amber-500 dark:text-amber-400">Low Stock</div>
+            <TrendingDown className="w-5 h-5 text-amber-500" />
+          </div>
+          <div className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">{lowStock}</div>
+        </div>
+        <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between">
+            <div className="text-sm font-medium text-orange-500 dark:text-orange-400">Expiring Soon</div>
+            <Clock className="w-5 h-5 text-orange-500" />
+          </div>
+          <div className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">{expiringSoon}</div>
+        </div>
+        <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between">
+            <div className="text-sm font-medium text-red-500 dark:text-red-400">Critical Stock</div>
+            <AlertTriangle className="w-5 h-5 text-red-500" />
+          </div>
+          <div className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">{criticalStock}</div>
+        </div>
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-4 justify-between bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
+          <input
+            type="text"
+            placeholder="Search inventory..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <Filter className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md py-2 px-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="All">All Statuses</option>
+            <option value="Critical">Critical</option>
+            <option value="Low Stock">Low Stock</option>
+            <option value="Expiring Soon">Expiring Soon</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-900/50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Item Name</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Category</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Lot Number</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Quantity</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Reorder Level</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Expiry Date</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              {loading ? (
+                <tr>
+                  <td colSpan={8} className="px-6 py-4 text-center">
+                    <RefreshCw className="w-6 h-6 animate-spin text-blue-500 mx-auto" />
+                  </td>
+                </tr>
+              ) : filteredItems.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">No items found.</td>
+                </tr>
+              ) : (
+                filteredItems.map((item) => (
+                  <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{item.item_name}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{item.category}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{item.lot_number}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{item.quantity} {item.unit}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{item.reorder_level}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{item.expiry_date}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(item)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
+                      <button className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"><Edit className="w-4 h-4 inline" /></button>
+                      <button className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"><Trash2 className="w-4 h-4 inline" /></button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}

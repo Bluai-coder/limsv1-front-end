@@ -26,7 +26,7 @@
 // } from "lucide-react";
 // import Link from "next/link";
 
-// import { useReferringPhysician } from "@/hooks/useReferringPhysician";
+// import { useReferringPhysician } from "@/hooks/use-referring-physician";
 // import { useAuthStore } from "@/lib/auth-store";
 // import { PermissionDenied } from '@/components/PermissionGuard';
 // import { usePermissions } from '@/hooks/permissions/usePermissions';
@@ -514,7 +514,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-import { useReferringPhysician } from "@/hooks/useReferringPhysician";
+import { useReferringPhysician } from "@/hooks/use-referring-physician";
 import { useAuthStore } from "@/lib/auth-store";
 import { PermissionDenied } from '@/components/PermissionGuard';
 import { usePermissions } from '@/hooks/permissions/usePermissions';

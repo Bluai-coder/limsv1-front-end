@@ -27,6 +27,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import axios from 'axios';
 import PaymentModal from '@/components/PaymentModal';
+import QueryError from '@/components/common/QueryError';
 import { api } from '@/lib/api';
 
 // Status badge component with theme support
@@ -201,6 +202,7 @@ export default function InvoicesPage() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState(null);
   const [amountPay ,setAmountPay]= useState(0)
+  const [fetchError, setFetchError] = useState(null);
   const [viewInvoice, setViewInvoice] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
   const [summary, setSummary] = useState({
@@ -219,6 +221,7 @@ export default function InvoicesPage() {
   const fetchInvoices = async () => {
     try {
       setLoading(true);
+      setFetchError(null);
       const response = await api.get('/invoices', {
         params: {
           page: currentPage,
@@ -242,6 +245,7 @@ export default function InvoicesPage() {
       });
     } catch (error) {
       console.error('Error fetching invoices:', error);
+      setFetchError(error);
       toast.error('Failed to load invoices');
     } finally {
       setLoading(false);
@@ -388,6 +392,7 @@ export default function InvoicesPage() {
         </div>
       </div>
 
+      {fetchError && <QueryError error={fetchError} onRetry={fetchInvoices} className="mb-4" />}
       {/* TABLE */}
       <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">

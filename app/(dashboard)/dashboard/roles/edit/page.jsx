@@ -290,7 +290,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
@@ -300,6 +300,7 @@ import { useCreateRole, useRoleById, useUpdateRole } from "@/hooks/use-roles";
 import { useAuthStore } from '@/lib/auth-store';
 import { usePermissions } from '@/hooks/permissions/usePermissions';
 import { PermissionDenied } from '@/components/PermissionGuard';
+import PermissionBuilder from '@/components/roles/PermissionBuilder';
 
 export default function UpdateRolePage() {
   // Use permission hook
@@ -321,6 +322,7 @@ export default function UpdateRolePage() {
 
   const updateRole = useUpdateRole();
   const { tenant } = useAuthStore();
+  const [permissions, setPermissions] = React.useState([]);
 
   const {
     register,
@@ -350,6 +352,10 @@ export default function UpdateRolePage() {
       displayName: roleById.displayName || "",
       description: roleById.description || ""
     });
+    
+    if (roleById.permissions) {
+      setPermissions(roleById.permissions);
+    }
   }, [roleById, reset]);
 
   // ================================
@@ -360,7 +366,8 @@ export default function UpdateRolePage() {
       const payload = {
         name: data.name,
         displayName: data.displayName,
-        description: data.description
+        description: data.description,
+        permissions: permissions
       };
 
       const role = await updateRole.mutateAsync({
@@ -467,6 +474,16 @@ export default function UpdateRolePage() {
                   placeholder="Handles billing and invoices"
                 />
               </div>
+            </div>
+          </div>
+
+          {/* Permission Builder */}
+          <div className={cardClass}>
+            <div className="p-6">
+              <PermissionBuilder 
+                initialPermissions={permissions}
+                onChange={setPermissions}
+              />
             </div>
           </div>
 

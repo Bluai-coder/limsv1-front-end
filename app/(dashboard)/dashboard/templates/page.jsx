@@ -8,7 +8,7 @@ import {
     FileText, Layout, RefreshCw, ChevronDown, ChevronUp,
     AlertTriangle
 } from 'lucide-react';
-import { usetenantTemplates, usetenantTemplateStatistics, useDeletetenantTemplate, useSetDefaulttenantTemplate, useDuplicatetenantTemplate, useToggletenantTemplateActive } from '@/hooks/useTenantTemplatesForPdf';
+import { usetenantTemplates, usetenantTemplateStatistics, useDeletetenantTemplate, useSetDefaulttenantTemplate, useDuplicatetenantTemplate, useToggletenantTemplateActive } from '@/hooks/use-tenant-templates-pdf';
 import TenantTemplateModal from '@/components/TenantTemplateModal';
 import TenantTemplatePreview from '@/components/TenantTemplatePreview';
 

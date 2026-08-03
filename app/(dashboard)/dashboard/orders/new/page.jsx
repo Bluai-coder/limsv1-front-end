@@ -11,7 +11,7 @@ import { ArrowLeft, Save, Loader2, Search, X, AlertTriangle, Check, Eye } from '
 import { useAuthStore } from '@/lib/auth-store';
 import { useTestCatalog, useTestCatalogPackages } from '@/hooks/use-test-catalog';
 import TestDetailsModal from '@/components/detail-popup/TestDetailsModal';
-import { useReferringPhysician } from '@/hooks/useReferringPhysician';
+import { useReferringPhysician } from '@/hooks/use-referring-physician';
 import { usePermissions } from '@/hooks/permissions/usePermissions';
 import { PermissionDenied } from '@/components/PermissionGuard';
 import PaymentModal from "@/components/PaymentModal";

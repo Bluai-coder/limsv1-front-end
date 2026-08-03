@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Search, Plus, ChevronLeft, ChevronRight, Users, Shield, Pencil, Trash2, Eye } from 'lucide-react';
 import { useDeleteUser, useUsers } from '@/hooks/use-users';
 import { PermissionDenied } from '@/components/PermissionGuard';
+import QueryError from '@/components/common/QueryError';
 import { useAuthStore } from '@/lib/auth-store';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -99,7 +100,7 @@ export default function UsersPage() {
     return <PermissionDenied resource="Users" action="read" />;
   }
 
-  const { data, isLoading, refetch } = useUsers({
+  const { data, isLoading, isError, error, refetch } = useUsers({
     q: search || undefined,
     page,
     limit: 10,
@@ -178,6 +179,7 @@ export default function UsersPage() {
       </div>
 
       {/* Table */}
+      {isError && <QueryError error={error} onRetry={refetch} className="mb-4" />}
       <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-[900px] w-full text-sm">

@@ -31,6 +31,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
 import SpecimenDetailsPopup from '@/components/detail-popup/SpecimenDetailsPopup';
 import { usePermissions } from '@/hooks/permissions/usePermissions';
+import QueryError from '@/components/common/QueryError';
 import { PermissionDenied } from '@/components/PermissionGuard';
 import { Scanner } from '@yudiel/react-qr-scanner';
 
@@ -138,7 +139,7 @@ export default function SpecimensPage() {
     queryKey: ["aliquots"],
   });
 
-  const { data, isLoading, refetch } = useSpecimens({
+  const { data, isLoading, isError, error, refetch } = useSpecimens({
     status: statusFilter || undefined,
     page,
     limit
@@ -366,42 +367,39 @@ export default function SpecimensPage() {
           specimen.qr_code.url = qrCodeUrl;
         }
 
-        // Print QR label
+        // Print QR label (Professional 2x1 inch thermal layout)
         const printWindow = window.open('', '_blank');
         printWindow.document.write(`
         <html>
           <head>
             <title>Specimen Label - ${specimen?.barcode}</title>
             <style>
+              /* Force printer to 2x1 inch format with zero margins */
+              @page {
+                size: 2in 1in;
+                margin: 0;
+              }
               body {
+                margin: 0;
+                padding: 0;
                 display: flex;
                 justify-content: center;
                 align-items: center;
-                height: 100vh;
-                margin: 0;
-                font-family: Arial, sans-serif;
                 background: #fff;
-              }
-              .container {
-                text-align: center;
-                max-width: 100%;
+                width: 2in;
+                height: 1in;
+                overflow: hidden;
               }
               img {
-                max-width: 90vw;
-                max-height: 90vh;
+                width: 100%;
+                height: 100%;
                 object-fit: contain;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-              }
-              @media print {
-                body { margin: 0; padding: 0; }
-                img { max-width: 100%; max-height: 100%; box-shadow: none; }
+                /* Optional rotation if printer feeds sideways: transform: rotate(90deg); */
               }
             </style>
           </head>
           <body>
-            <div class="container">
-              <img src="${qrCodeUrl}" alt="Specimen Label" />
-            </div>
+            <img src="${qrCodeUrl}" alt="Specimen Label" />
           </body>
         </html>
       `);
@@ -426,6 +424,30 @@ export default function SpecimensPage() {
 
 
 
+
+  /**
+   * Plays a short, high-pitched beep using the Web Audio API.
+   * Provides immediate auditory feedback for successful scans.
+   */
+  const playSuccessBeep = () => {
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContext) return;
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+      gainNode.gain.setValueAtTime(0.1, ctx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.1);
+      osc.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.1);
+    } catch (e) {
+      console.warn("Audio feedback not supported", e);
+    }
+  };
 
   const handleScanSuccess = async (detectedCodes) => {
     if (detectedCodes && detectedCodes.length > 0) {
@@ -453,6 +475,7 @@ export default function SpecimensPage() {
             if (window.navigator?.vibrate) {
               window.navigator.vibrate(200);
             }
+            playSuccessBeep();
             handleClose();
             refetch();
           }
@@ -520,19 +543,43 @@ export default function SpecimensPage() {
             </div>
           ) : (
             <div className="flex flex-col items-center">
-              <div className="relative w-full max-w-[300px]">
+              <div className="relative w-full max-w-[500px]">
                 {/* Safe rendering for scanner - avoids Next.js hydration/camera crashes */}
                 {typeof window !== 'undefined' && (
                   <Scanner
                     onScan={handleScanSuccess}
                     onError={handleScanError}
                     constraints={{ facingMode: "environment" }}
-                    scanDelay={500}
-                    style={{ width: '100%', borderRadius: '0.5rem', height: '150px' }}
+                    scanDelay={300}
+                    style={{ width: '100%', borderRadius: '0.75rem', height: '300px', objectFit: 'cover' }}
                   />
                 )}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="border-2 border-green-500 rounded-md w-24 h-24"></div>
+                
+                {/* Hardware-style Scanner Overlay */}
+                <div className="absolute inset-0 pointer-events-none border-4 border-black/10 rounded-xl overflow-hidden">
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="border-2 border-green-500/50 w-3/4 h-3/4 rounded-lg shadow-[0_0_15px_rgba(34,197,94,0.3)]"></div>
+                  </div>
+                  {/* Laser Animation */}
+                  <style>{`
+                    @keyframes laserScan {
+                      0% { top: 10%; opacity: 0; }
+                      10% { opacity: 1; }
+                      90% { opacity: 1; }
+                      100% { top: 90%; opacity: 0; }
+                    }
+                    .scanner-laser {
+                      position: absolute;
+                      left: 10%;
+                      width: 80%;
+                      height: 2px;
+                      background-color: #ef4444;
+                      box-shadow: 0 0 10px #ef4444, 0 0 20px #ef4444;
+                      animation: laserScan 2s infinite ease-in-out;
+                      z-index: 20;
+                    }
+                  `}</style>
+                  <div className="scanner-laser"></div>
                 </div>
               </div>
               <button
@@ -595,6 +642,7 @@ export default function SpecimensPage() {
       </div>
 
       {/* Main Table */}
+      {isError && <QueryError error={error} onRetry={refetch} className="mb-4" />}
       <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-3xl border border-gray-200/60 dark:border-gray-700/60 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1050px] text-sm">
@@ -680,7 +728,8 @@ export default function SpecimensPage() {
                     </td>
 
                     <td className="px-6 py-4">
-                      {sp.status === "collected" && (
+                      {/* RBAC Guard: Only users with Update permission can receive specimens */}
+                      {(canUpdate('Specimens') || isAdmin()) && sp.status === "collected" && (
                         <button
                           onClick={() => setReceiveModal(sp)}
                           className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors"
@@ -688,8 +737,9 @@ export default function SpecimensPage() {
                           Receive
                         </button>
                       )}
-                      {console.log("aliquotCountsaliquotCountsaliquotCounts", aliquotCounts)}
-                      {aliquotCounts?.[sp.id] == 0 && sp.status === "received" && (
+                      
+                      {/* RBAC Guard: Only users with Update permission can add aliquots */}
+                      {(canUpdate('Specimens') || isAdmin()) && aliquotCounts?.[sp.id] == 0 && sp.status === "received" && (
                         <button
                           onClick={() => setAliquotModal(sp)}
                           className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium transition-colors"

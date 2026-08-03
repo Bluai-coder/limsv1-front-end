@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { X, Loader2, Download, Printer } from 'lucide-react';
-import { usePreviewAdminTemplate } from '@/hooks/useAdminTemplates';
+import { usePreviewAdminTemplate } from '@/hooks/use-admin-templates';
 
 export default function AdminTemplatePreview({ isOpen, onClose, template }) {
     const [previewUrl, setPreviewUrl] = useState(null);

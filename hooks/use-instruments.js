@@ -4,6 +4,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { instrumentApi } from "@/lib/api";
+import { toast } from "sonner";
 
 // ============================================================
 // 🔹 GET ALL INSTRUMENTS
@@ -44,6 +45,10 @@ export function useCreateInstrument() {
         exact: false,
       });
     },
+    onError: (error) => {
+      const msg = error?.response?.data?.message || error?.message || 'Operation failed';
+      toast.error(msg);
+    },
   });
 }
 
@@ -60,6 +65,10 @@ export function useUpdateInstrument() {
     onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: ["instruments"], exact: false });
       qc.invalidateQueries({ queryKey: ["instruments", variables.id] });
+    },
+    onError: (error) => {
+      const msg = error?.response?.data?.message || error?.message || 'Operation failed';
+      toast.error(msg);
     },
   });
 }
@@ -100,6 +109,8 @@ export function useDeleteInstrument() {
       context?.previous?.forEach(([key, data]) => {
         qc.setQueryData(key, data);
       });
+      const msg = _err?.response?.data?.message || _err?.message || 'Operation failed';
+      toast.error(msg);
     },
 
     // 🔥 FINAL SYNC

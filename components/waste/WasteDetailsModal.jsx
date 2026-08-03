@@ -7,7 +7,7 @@
 //     Droplet, Scissors, Syringe, FlaskConical,
 //     Printer, Download
 // } from 'lucide-react';
-// import { useTreatWaste, useDisposeWaste } from '@/hooks/useWaste';
+// import { useTreatWaste, useDisposeWaste } from '@/hooks/use-waste';
 // import WasteStatusBadge from './WasteStatusBadge';
 // import WasteTypeBadge from './WasteTypeBadge';
 // import { formatDate } from '@/lib/utils';
@@ -372,11 +372,12 @@ import {
     useGenerateBarcode,
     useGenerateQR,
     useGenerateLabel
-} from '@/hooks/useWaste';
+} from '@/hooks/use-waste';
 import WasteStatusBadge from './WasteStatusBadge';
 import WasteTypeBadge from './WasteTypeBadge';
 import { formatDate } from '@/lib/utils';
 import { toast } from 'sonner';
+import LabelPrintModal from '@/components/labels/LabelPrintModal';
 
 export default function WasteDetailsModal({ waste: initialWaste, onClose, onUpdate }) {
     const [waste, setWaste] = useState(initialWaste);
@@ -385,6 +386,7 @@ export default function WasteDetailsModal({ waste: initialWaste, onClose, onUpda
     const [activeTab, setActiveTab] = useState('details');
     const [isGenerating, setIsGenerating] = useState(false);
     const [barcodeData, setBarcodeData] = useState(null);
+    const [showPrintModal, setShowPrintModal] = useState(false);
     
     // Form state for editing
     const [editData, setEditData] = useState({
@@ -598,27 +600,7 @@ export default function WasteDetailsModal({ waste: initialWaste, onClose, onUpda
     };
 
     const handlePrintLabel = () => {
-        if (!barcodeData?.label_image && !waste?.barcode_image_url) return;
-        const imageUrl = barcodeData?.label_image || waste?.barcode_image_url;
-        const win = window.open('', '_blank');
-        win.document.write(`
-            <html>
-                <head><title>Waste Label</title></head>
-                <body style="display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;background:#fff;">
-                    <div style="text-align:center;">
-                        <img src="${imageUrl}" style="max-width:500px;width:100%;" />
-                        <br><br>
-                        <button onclick="window.print();" style="padding:10px 30px;font-size:16px;cursor:pointer;background:#1a56db;color:white;border:none;border-radius:8px;">
-                            🖨️ Print
-                        </button>
-                        <button onclick="window.close();" style="padding:10px 30px;font-size:16px;cursor:pointer;background:#6b7280;color:white;border:none;border-radius:8px;margin-left:10px;">
-                            Close
-                        </button>
-                    </div>
-                </body>
-            </html>
-        `);
-        win.document.close();
+        setShowPrintModal(true);
     };
 
     const handleDownloadLabel = () => {
@@ -1301,6 +1283,20 @@ export default function WasteDetailsModal({ waste: initialWaste, onClose, onUpda
                     )}
                 </div>
             </div>
+            <LabelPrintModal
+                isOpen={showPrintModal}
+                onClose={() => setShowPrintModal(false)}
+                labelType="waste"
+                labelData={{
+                    wasteBarcode: waste?.waste_barcode,
+                    wasteType: waste?.waste_type,
+                    containerType: waste?.container_type,
+                    collectionDate: waste?.collection_date ? formatDate(waste.collection_date) : null,
+                    technicianName: waste?.created_by?.name || waste?.collected_by?.name || 'N/A',
+                    disposalDeadline: waste?.disposal_deadline ? formatDate(waste.disposal_deadline) : null,
+                    qrCodeUrl: waste?.qr_code_url || barcodeData?.qr_code
+                }}
+            />
         </div>
     );
 }

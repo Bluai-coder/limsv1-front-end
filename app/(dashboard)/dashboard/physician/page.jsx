@@ -7,7 +7,7 @@
 // import ActionDropdown from '@/components/ActionDropdown';
 // import { useRouter } from 'next/navigation';
 // import { toast } from 'sonner';
-// import { useReferringPhysician } from '@/hooks/useReferringPhysician';
+// import { useReferringPhysician } from '@/hooks/use-referring-physician';
 // import PhysicianDetailModal from '@/components/detail-popup/PhysicianDetailModal';
 
 // export default function PhysiciansPage() {
@@ -302,7 +302,7 @@ import { Search, Plus, ChevronLeft, ChevronRight, Users, Trash2, Eye, Phone, Mai
 import { useAuthStore } from '@/lib/auth-store';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { useReferringPhysician } from '@/hooks/useReferringPhysician';
+import { useReferringPhysician } from '@/hooks/use-referring-physician';
 import PhysicianDetailModal from '@/components/detail-popup/PhysicianDetailModal';
 import { PermissionDenied } from '@/components/PermissionGuard';
 import { usePermissions } from '@/hooks/permissions/usePermissions';

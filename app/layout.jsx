@@ -1,11 +1,10 @@
 
 // ============================================================
-// app/layout.jsx — FINAL CORRECT VERSION
+// app/layout.jsx — Root Layout
 // ============================================================
 
-import { Inter, Playfair_Display } from "next/font/google";
+import { Inter } from "next/font/google";
 import { GeistSans } from "geist/font/sans";
-import { GeistMono } from "geist/font/mono";
 
 import { Providers } from "./providers";
 import "@/styles/globals.css";
@@ -14,12 +13,6 @@ import "@/styles/globals.css";
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
-  display: "swap",
-});
-
-const playfair = Playfair_Display({
-  subsets: ["latin"],
-  variable: "--font-playfair",
   display: "swap",
 });
 
@@ -34,14 +27,13 @@ export default function RootLayout({ children }) {
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`
         ${GeistSans.variable}
-        ${GeistMono.variable}
         ${inter.variable}
-        ${playfair.variable}
       `}
     >
-      <body className="bg-gray-50 font-sans antialiased">
+      <body className="bg-gray-50 dark:bg-gray-900 font-sans antialiased">
         <Providers>{children}</Providers>
       </body>
     </html>

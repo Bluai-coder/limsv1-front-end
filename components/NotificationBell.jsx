@@ -30,7 +30,7 @@ import {
   useMarkAllNotificationsAsRead,
   useDeleteNotification,
   useMarkAllAsSeen
-} from '@/hooks/useNotifications';
+} from '@/hooks/use-notifications';
 import { useAuthStore } from '@/lib/auth-store';
 import { usePathname } from 'next/navigation';
 
@@ -49,9 +49,6 @@ export default function NotificationBell() {
   const hasMarkedSeen = useRef(false);
 
   const isAdminPath = pathname.includes("/admin");
-  if (isAdminPath) {
-    return null; // Don't render the notification bell on admin pages
-  }
 
   // API Hooks
   const { data: notificationsData, isLoading, refetch } = useNotifications({
@@ -250,6 +247,10 @@ export default function NotificationBell() {
   const isSeenButUnread = useCallback((notification) => {
     return notification.seen_at && notification.status !== 'read';
   }, []);
+
+  if (isAdminPath) {
+    return null; // Don't render the notification bell on admin pages
+  }
 
   return (
     <>

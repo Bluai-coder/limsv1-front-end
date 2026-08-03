@@ -27,14 +27,16 @@ import {
     Scan,
     RefreshCw
 } from 'lucide-react';
-import { useWasteRecords, useWasteSummary, useDeleteWaste } from '@/hooks/useWaste';
+import { useWasteRecords, useWasteSummary, useDeleteWaste } from '@/hooks/use-waste';
 import WasteStatusBadge from '@/components/waste/WasteStatusBadge';
 import WasteTypeBadge from '@/components/waste/WasteTypeBadge';
 import CreateWasteModal from '@/components/waste/CreateWasteModal';
 import WasteDetailsModal from '@/components/waste/WasteDetailsModal';
 import BarcodeScannerModal from '@/components/waste/BarcodeScannerModal';
+import DeleteConfirmModal from '@/components/common/DeleteConfirmModal';
 import { formatDate } from '@/lib/utils';
 import { toast } from 'sonner';
+import { usePermissions } from '@/hooks/permissions/usePermissions';
 
 export default function WasteManagementPage() {
     const router = useRouter();
@@ -54,6 +56,11 @@ export default function WasteManagementPage() {
     const [isDark, setIsDark] = useState(false);
     const [selectedRows, setSelectedRows] = useState([]);
     const [isSelectAll, setIsSelectAll] = useState(false);
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [deleteModalConfig, setDeleteModalConfig] = useState({ title: '', message: '', ids: [] });
+
+    // RBAC Hooks
+    const { canCreate, canDelete, isAdmin } = usePermissions();
 
     const { data, isLoading, error, refetch } = useWasteRecords(filters);
     const { data: summary, refetch: refetchSummary } = useWasteSummary();
@@ -61,14 +68,12 @@ export default function WasteManagementPage() {
     const printRef = useRef();
 
     const handleDelete = (id) => {
-        if (confirm('Are you sure you want to delete this waste record?')) {
-            deleteMutation.mutate(id, {
-                onSuccess: () => {
-                    refetch();
-                    refetchSummary();
-                }
-            });
-        }
+        setDeleteModalConfig({
+            title: 'Delete Waste Record',
+            message: 'Are you sure you want to delete this waste record?',
+            ids: [id]
+        });
+        setDeleteModalOpen(true);
     };
 
     const handleBulkDelete = () => {
@@ -76,13 +81,27 @@ export default function WasteManagementPage() {
             toast.warning('Please select at least one record to delete');
             return;
         }
-        if (confirm(`Are you sure you want to delete ${selectedRows.length} waste records?`)) {
-            // Bulk delete logic
-            selectedRows.forEach(id => {
-                deleteMutation.mutate(id);
-            });
+        setDeleteModalConfig({
+            title: 'Delete Waste Records',
+            message: `Are you sure you want to delete ${selectedRows.length} waste records?`,
+            ids: selectedRows
+        });
+        setDeleteModalOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        try {
+            for (const id of deleteModalConfig.ids) {
+                await deleteMutation.mutateAsync(id);
+            }
+            toast.success(deleteModalConfig.ids.length > 1 ? 'Successfully deleted records' : 'Successfully deleted record');
             setSelectedRows([]);
             setIsSelectAll(false);
+            setDeleteModalOpen(false);
+            refetch();
+            refetchSummary();
+        } catch (error) {
+            toast.error('Failed to delete record(s)');
         }
     };
 
@@ -281,6 +300,8 @@ export default function WasteManagementPage() {
                     </button>
 
                     {/* Add */}
+                    {/* RBAC Guard: Only users with Create permission can add waste */}
+                    {(canCreate('Waste') || isAdmin()) && (
                     <button
                         onClick={() => setShowCreateModal(true)}
                         className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg shadow-lg shadow-blue-600/20 transition-all duration-200"
@@ -289,6 +310,7 @@ export default function WasteManagementPage() {
                         <span className="hidden sm:inline">Add Waste</span>
                         <span className="sm:hidden">Add</span>
                     </button>
+                    )}
                 </div>
             </div>
 
@@ -455,6 +477,9 @@ export default function WasteManagementPage() {
                                                 >
                                                     <Edit className="w-4 h-4" />
                                                 </button> */}
+                                                
+                                                {/* RBAC Guard: Only users with Delete permission can delete waste */}
+                                                {(canDelete('Waste') || isAdmin()) && (
                                                 <button
                                                     onClick={() => handleDelete(waste.id)}
                                                     className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition"
@@ -463,6 +488,7 @@ export default function WasteManagementPage() {
                                                 >
                                                     <Trash2 className="w-4 h-4" />
                                                 </button>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>
@@ -476,7 +502,8 @@ export default function WasteManagementPage() {
                 {data?.data?.length > 0 && (
                     <div className="px-4 sm:px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-4">
                         <div className="flex items-center gap-3">
-                            {selectedRows.length > 0 && (
+                            {/* RBAC Guard: Bulk delete requires Delete permission */}
+                            {selectedRows.length > 0 && (canDelete('Waste') || isAdmin()) && (
                                 <button
                                     onClick={handleBulkDelete}
                                     className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition"
@@ -542,6 +569,15 @@ export default function WasteManagementPage() {
                     onScanSuccess={handleScanSuccess}
                 />
             )}
+
+            <DeleteConfirmModal
+                isOpen={deleteModalOpen}
+                onClose={() => setDeleteModalOpen(false)}
+                onConfirm={confirmDelete}
+                title={deleteModalConfig.title}
+                message={deleteModalConfig.message}
+                isLoading={deleteMutation.isPending}
+            />
         </div>
     );
 }

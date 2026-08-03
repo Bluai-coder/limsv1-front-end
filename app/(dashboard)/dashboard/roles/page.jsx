@@ -10,55 +10,16 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { PermissionDenied } from '@/components/PermissionGuard';
 import { usePermissions } from '@/hooks/permissions/usePermissions';
-
-// Delete Confirmation Modal Component with Theme Support
-const DeleteConfirmModal = ({ role, onConfirm, onCancel }) => {
-  if (!role) return null;
-  
-  return (
-    <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-md w-full mx-4 shadow-xl">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-            <Trash2 className="w-6 h-6 text-red-600 dark:text-red-400" />
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Delete Role</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">This action cannot be undone</p>
-          </div>
-        </div>
-        
-        <p className="text-gray-700 dark:text-gray-300 mb-6">
-          Are you sure you want to delete role{' '}
-          <span className="font-semibold">{role.displayName || role.name}</span>?
-          This will permanently remove the role from the system.
-        </p>
-        
-        <div className="flex gap-3">
-          <button
-            onClick={onCancel}
-            className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={onConfirm}
-            className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl transition"
-          >
-            Delete Role
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
+import SearchInput from '@/components/common/SearchInput';
+import TableSkeleton from '@/components/common/TableSkeleton';
+import DeleteConfirmModal from '@/components/common/DeleteConfirmModal';
+import Pagination from '@/components/common/Pagination';
 
 // View Details Modal Component with Theme Support
 const ViewRoleModal = ({ role, onClose }) => {
   if (!role) return null;
 
-  const permissions = role.permissions || {};
-  const permissionCategories = Object.keys(permissions);
+  const permissions = Array.isArray(role.permissions) ? role.permissions : [];
 
   return (
     <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50">
@@ -98,23 +59,27 @@ const ViewRoleModal = ({ role, onClose }) => {
         </div>
 
         <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Permissions</h4>
-        <div className="space-y-3">
-          {permissionCategories.map((category) => (
-            <div key={category} className="border dark:border-gray-700 rounded-lg p-3">
-              <h5 className="font-medium text-gray-800 dark:text-gray-200 mb-2">{category}</h5>
-              <div className="flex flex-wrap gap-2">
-                {permissions[category]?.map((perm) => (
-                  <span
-                    key={perm}
-                    className="px-2 py-1 text-xs rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300"
-                  >
-                    {perm}
-                  </span>
-                ))}
+        {permissions.length === 0 ? (
+          <p className="text-sm text-gray-500">No permissions assigned.</p>
+        ) : (
+          <div className="space-y-3">
+            {permissions.map((permGroup, index) => (
+              <div key={index} className="border dark:border-gray-700 rounded-lg p-3">
+                <h5 className="font-medium text-gray-800 dark:text-gray-200 mb-2">{permGroup.module}</h5>
+                <div className="flex flex-wrap gap-2">
+                  {permGroup.actions?.map((action) => (
+                    <span
+                      key={action}
+                      className="px-2 py-1 text-xs rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 capitalize"
+                    >
+                      {action}
+                    </span>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         <div className="flex justify-end mt-6">
           <button
@@ -128,17 +93,6 @@ const ViewRoleModal = ({ role, onClose }) => {
     </div>
   );
 };
-
-// Loading Skeleton Component
-const TableSkeleton = ({ columns = 4 }) => (
-  <tr className="animate-pulse">
-    {Array.from({ length: columns }).map((_, j) => (
-      <td key={j} className="px-6 py-4">
-        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24" />
-      </td>
-    ))}
-  </tr>
-);
 
 export default function RolesPage() {
   const router = useRouter();
@@ -200,13 +154,19 @@ export default function RolesPage() {
   return (
     <div className="space-y-6">
       {/* Delete Confirmation Modal */}
-      {deleteConfirm && (
-        <DeleteConfirmModal
-          role={deleteConfirm}
-          onConfirm={() => RemoveRole(deleteConfirm.id)}
-          onCancel={() => setDeleteConfirm(null)}
-        />
-      )}
+      <DeleteConfirmModal
+        isOpen={!!deleteConfirm}
+        onClose={() => setDeleteConfirm(null)}
+        onConfirm={() => RemoveRole(deleteConfirm?.id)}
+        title="Delete Role"
+        message={
+          <>
+            Are you sure you want to delete role{' '}
+            <span className="font-semibold">{deleteConfirm?.displayName || deleteConfirm?.name}</span>?
+            This will permanently remove the role from the system.
+          </>
+        }
+      />
 
       {/* View Role Modal */}
       {viewRole && (
@@ -237,18 +197,14 @@ export default function RolesPage() {
 
       {/* SEARCH */}
       <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-sm p-5">
-        <div className="relative">
-          <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
-          <input
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-            placeholder="Search roles by name or description..."
-            className="w-full pl-14 pr-5 py-4 border border-gray-200 dark:border-gray-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#1b4dff] text-base bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500"
-          />
-        </div>
+        <SearchInput
+          value={search}
+          onChange={(val) => {
+            setSearch(val);
+            setPage(1);
+          }}
+          placeholder="Search roles by name or description..."
+        />
       </div>
 
       {/* TABLE */}
@@ -385,33 +341,13 @@ export default function RolesPage() {
 
         {/* PAGINATION - Consistent styling with theme support */}
         {pagination && pagination.totalPages > 1 && (
-          <div className="flex flex-col sm:flex-row justify-between items-center px-6 py-5 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Showing {Math.min((page - 1) * limit + 1, pagination.total)}–{Math.min(page * limit, pagination.total)} of {pagination.total} roles
-            </p>
-
-            <div className="flex items-center gap-2 mt-3 sm:mt-0">
-              <button
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="p-3 rounded-2xl border border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 disabled:opacity-40 transition text-gray-600 dark:text-gray-400"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-
-              <span className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400">
-                Page {page} of {pagination.totalPages}
-              </span>
-
-              <button
-                onClick={() => setPage(p => Math.min(pagination.totalPages, p + 1))}
-                disabled={page === pagination.totalPages}
-                className="p-3 rounded-2xl border border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 disabled:opacity-40 transition text-gray-600 dark:text-gray-400"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
+          <Pagination
+            currentPage={page}
+            totalPages={pagination.totalPages}
+            onPageChange={setPage}
+            totalItems={pagination.total}
+            pageSize={limit}
+          />
         )}
       </div>
     </div>

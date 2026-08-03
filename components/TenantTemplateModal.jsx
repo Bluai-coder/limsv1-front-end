@@ -4,8 +4,8 @@
 import { useState, useEffect } from 'react';
 import { X, Save, Loader2, Eye, Palette, Type, Layout } from 'lucide-react';
 import { toast } from 'sonner';
-import { useCreateAdminTemplate, useUpdateAdminTemplate } from '@/hooks/useAdminTemplates';
-import { useCreatetenantTemplate, useUpdatetenantTemplate } from '../hooks/useTenantTemplatesForPdf';
+import { useCreateAdminTemplate, useUpdateAdminTemplate } from '@/hooks/use-admin-templates';
+import { useCreatetenantTemplate, useUpdatetenantTemplate } from '../hooks/use-tenant-templates-pdf';
 
 // Pre-built templates for non-technical users
 const PREBUILT_TEMPLATES = {
