@@ -140,7 +140,7 @@ export default function WorklistPage() {
 
   const confirmPathReview = async () => {
     if (!password) {
-      toast.error('Please enter your password');
+      toast.error('Please enter your Signature PIN');
       return;
     }
     if (!selectedOrderTestId) return;
@@ -560,12 +560,13 @@ export default function WorklistPage() {
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Enter your password</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Enter your 4-digit Signature PIN</label>
                 <input
                   type="password"
+                  maxLength={6}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Your password"
+                  placeholder="Your Signature PIN"
                   className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors"
                   autoFocus
                   onKeyPress={(e) => e.key === 'Enter' && confirmPathReview()}

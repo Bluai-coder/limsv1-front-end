@@ -94,7 +94,7 @@ export default function DashboardPage() {
    */
   const fetchCriticalAlerts = async () => {
     try {
-      const res = await api.get('/critical-values/notifications?status=pending&limit=5');
+      const res = await api.get('/notifications?type=critical_value&status=pending&limit=5');
       setCriticalAlerts(res.data?.data || []);
     } catch {
       // Silently fail — critical alerts are supplementary

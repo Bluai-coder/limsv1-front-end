@@ -10,7 +10,7 @@ import { toast } from "sonner";
 /**
  * Get user notifications with filters
  */
-export const useNotifications = (filters = {}) => {
+export const useNotifications = (filters = {}, options = {}) => {
     return useQuery({
         queryKey: ["notifications", filters],
         queryFn: async () => {
@@ -29,13 +29,14 @@ export const useNotifications = (filters = {}) => {
         },
         staleTime: 30000,
         refetchInterval: 60000, // Auto-refetch every 60 seconds
+        ...options
     });
 };
 
 /**
  * Get notification counts (unseen, unread, total)
  */
-export const useNotificationCounts = (userId) => {
+export const useNotificationCounts = (userId, options = {}) => {
     return useQuery({
         queryKey: ["notifications", "counts"],
         queryFn: async () => {
@@ -44,6 +45,7 @@ export const useNotificationCounts = (userId) => {
         },
         staleTime: 10000,
         refetchInterval: 60000, // Refetch every 60 seconds (aligned with notifications polling)
+        ...options
     });
 };
 

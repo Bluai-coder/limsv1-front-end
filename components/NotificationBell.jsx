@@ -56,9 +56,13 @@ export default function NotificationBell() {
     userId: user.id,
     offset: 0,
     unreadOnly: activeTab === 'unread'
+  }, {
+    enabled: !isAdminPath
   });
 
-  const { data: countsData, refetch: refetchCounts } = useNotificationCounts(user.id);
+  const { data: countsData, refetch: refetchCounts } = useNotificationCounts(user.id, {
+    enabled: !isAdminPath
+  });
   const markAsReadMutation = useMarkNotificationAsRead();
   const markAllAsReadMutation = useMarkAllNotificationsAsRead();
   const deleteNotificationMutation = useDeleteNotification();

@@ -11,9 +11,10 @@ import {
   PieChart, Layers, Crown, Home, Server,
   Mail, Phone, MapPin, Eye, Pencil,
   ChevronRight, Sparkles, Zap, Target,
-  ShoppingBag, TestTube, Microscope
+  ShoppingBag, TestTube, Microscope,
 } from 'lucide-react';
 import { useTenants, useTenantById } from '@/hooks/use-tenants';
+import { useAdminDashboardStats } from '@/hooks/use-admin-dashboard';
 import { toast } from 'sonner';
 
 // ==================== STATISTICS CARD ====================
@@ -139,7 +140,6 @@ const PlanDistribution = ({ tenants }) => {
 const StatusDistribution = ({ tenants }) => {
   const active = tenants?.filter(t => t.status === 'active').length || 0;
   const inactive = tenants?.filter(t => t.status === 'inactive').length || 0;
-  const total = tenants?.length || 0;
 
   return (
     <div className="space-y-4">
@@ -148,22 +148,16 @@ const StatusDistribution = ({ tenants }) => {
         <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-xl">
           <div className="flex items-center justify-center gap-2">
             <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
-            <span className="text-2xl font-bold text-green-600 dark:text-green-400">{active}</span>
+            <span className="text-sm font-medium text-green-700 dark:text-green-300">Active</span>
           </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Active</p>
-          <div className="mt-2 w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-            <div className="h-full bg-green-500 rounded-full transition-all duration-1000" style={{ width: `${(active/total)*100 || 0}%` }} />
-          </div>
+          <p className="text-2xl font-bold text-green-700 dark:text-green-300 mt-2">{active}</p>
         </div>
         <div className="text-center p-4 bg-red-50 dark:bg-red-900/20 rounded-xl">
           <div className="flex items-center justify-center gap-2">
             <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
-            <span className="text-2xl font-bold text-red-600 dark:text-red-400">{inactive}</span>
+            <span className="text-sm font-medium text-red-700 dark:text-red-300">Inactive</span>
           </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Inactive</p>
-          <div className="mt-2 w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-            <div className="h-full bg-red-500 rounded-full transition-all duration-1000" style={{ width: `${(inactive/total)*100 || 0}%` }} />
-          </div>
+          <p className="text-2xl font-bold text-red-700 dark:text-red-300 mt-2">{inactive}</p>
         </div>
       </div>
     </div>
@@ -177,22 +171,26 @@ export default function DashboardPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [timeframe, setTimeframe] = useState('week');
 
-  const { data, isLoading, refetch } = useTenants({ 
+  const { data, isLoading: isTenantsLoading, refetch } = useTenants({ 
     search: search || undefined, 
     page, 
     limit: 100 
   });
+  
+  const { data: dashboardStats, isLoading: isStatsLoading, refetch: refetchStats } = useAdminDashboardStats();
 
   const tenants = data?.data || [];
   const pagination = data?.pagination;
+  const isLoading = isTenantsLoading || isStatsLoading;
 
   // Calculate statistics
-  const totalTenants = tenants.length;
-  const activeTenants = tenants.filter(t => t.status === 'active').length;
-  const inactiveTenants = tenants.filter(t => t.status === 'inactive').length;
-  const totalUsers = tenants.reduce((acc, t) => acc + (t.userCount || 0), 0);
-  const totalOrders = tenants.reduce((acc, t) => acc + (t.orderCount || 0), 0);
-  const totalTests = tenants.reduce((acc, t) => acc + (t.testCount || 0), 0);
+  const totalTenants = dashboardStats?.totalTenants || tenants.length || 0;
+  const activeTenants = tenants.filter(t => t.status === 'active').length || 0;
+  const inactiveTenants = tenants.filter(t => t.status === 'inactive').length || 0;
+  const totalUsers = dashboardStats?.totalUsers || 0;
+  const totalOrders = dashboardStats?.totalReports || 0;
+  const totalPatients = dashboardStats?.totalPatients || 0;
+  const totalTests = dashboardStats?.totalTests || 0;
 
   // Mock trends (replace with real data from API)
   const trends = {

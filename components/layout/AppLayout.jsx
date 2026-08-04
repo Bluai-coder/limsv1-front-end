@@ -11,12 +11,16 @@ import {
   Sun,
   Moon,
   Monitor,
+  Key,
+  Loader2,
 } from "lucide-react";
 import { useTheme } from "next-themes";
+import { api } from "@/lib/api";
 
 import { useAuthStore } from "@/lib/auth-store";
 import Image from "next/image";
 import NotificationBell from "@/components/NotificationBell";
+import { toast } from "sonner";
 
 export default function AppLayout({ children, menuConfig, permissionAction, basePath }) {
   const pathname = usePathname();
@@ -284,34 +288,34 @@ export default function AppLayout({ children, menuConfig, permissionAction, base
             </p>
           )}
 
-          {/* User Profile */}
-          <div className="flex items-center gap-3">
-            <div className={`
-              flex items-center gap-3 flex-1
-              ${(!sidebarOpen && !isMobile) ? "justify-center" : ""}
-            `}>
-              <div className={`
-                w-9 h-9 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 
-                flex items-center justify-center shadow-md flex-shrink-0
+            {/* User Profile */}
+            <div className="flex items-center gap-3">
+              <Link href="/dashboard/profile" className={`
+                flex items-center gap-3 flex-1 hover:bg-gray-50 dark:hover:bg-gray-800/50 p-1.5 rounded-xl transition-colors cursor-pointer
+                ${(!sidebarOpen && !isMobile) ? "justify-center" : ""}
               `}>
-                <span className="text-xs font-semibold text-white">
-                  {getInitials(user?.fullName)}
-                </span>
-              </div>
-
-              {(sidebarOpen || isMobile) && (
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                    {user?.fullName || "Administrator"}
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                    {user?.email || "admin@blulims.com"}
-                  </p>
+                <div className={`
+                  w-9 h-9 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 
+                  flex items-center justify-center shadow-md flex-shrink-0
+                `}>
+                  <span className="text-xs font-semibold text-white">
+                    {getInitials(user?.fullName)}
+                  </span>
                 </div>
-              )}
-            </div>
 
-            <button
+                {(sidebarOpen || isMobile) && (
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate group-hover:text-blue-600 transition-colors">
+                      {user?.fullName || "User"}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                      {user?.email || ""}
+                    </p>
+                  </div>
+                )}
+              </Link>
+
+              <button
               onClick={handleLogout}
               className={`
                 p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition

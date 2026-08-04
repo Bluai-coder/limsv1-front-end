@@ -206,6 +206,10 @@ export default function TenantTemplateModal({ isOpen, onClose, mode, template, o
 
         const submitData = {
             ...formData,
+            header_config: {
+                ...(formData.header_config || {}),
+                lab_name: formData.lab_name
+            },
             css_styles: formData.css_styles
         };
 
@@ -434,6 +438,16 @@ export default function TenantTemplateModal({ isOpen, onClose, mode, template, o
                     >
                         Sections
                     </button>
+                    <button
+                        onClick={() => setActiveTab('signatures')}
+                        className={`px-4 py-2 text-sm font-medium transition ${
+                            activeTab === 'signatures' 
+                                ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600' 
+                                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                        }`}
+                    >
+                        Signatures
+                    </button>
                 </div>
 
                 {/* Content */}
@@ -659,6 +673,94 @@ export default function TenantTemplateModal({ isOpen, onClose, mode, template, o
                         </div>
                     )}
                 </div>
+
+                
+                    {activeTab === 'signatures' && (
+                        <div className="p-6 space-y-6 max-h-[60vh] overflow-y-auto">
+                            <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-xl border border-blue-100 dark:border-blue-800">
+                                <h3 className="font-semibold text-blue-800 dark:text-blue-300 mb-2">Digital Signature Blocks</h3>
+                                <p className="text-sm text-blue-600 dark:text-blue-400">
+                                    Configure which signature placeholders should appear at the bottom of the report. The actual users will sign these electronically.
+                                </p>
+                            </div>
+                            
+                            <label className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900/30 rounded-lg cursor-pointer">
+                                <div>
+                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300 block">Enable Signatures on Report</span>
+                                    <span className="text-xs text-gray-500">Master toggle to show or hide all signatures.</span>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setFormData({ ...formData, show_signatures: !formData.show_signatures })}
+                                    className={`w-10 h-5 rounded-full transition ${formData.show_signatures ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'}`}
+                                >
+                                    <span className={`block w-4 h-4 rounded-full bg-white transition transform ${formData.show_signatures ? 'translate-x-5' : 'translate-x-1'}`} />
+                                </button>
+                            </label>
+
+                            {formData.show_signatures && (
+                                <div className="space-y-4 mt-4">
+                                    <h4 className="font-medium text-gray-900 dark:text-white">Required Signers</h4>
+                                    
+                                    {formData?.signatures?.map((sig, index) => (
+                                        <div key={index} className="flex items-center gap-3 bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                                            <div className="flex-1">
+                                                <label className="text-xs text-gray-500 block mb-1">Role Identifier (e.g. 'pathologist')</label>
+                                                <input
+                                                    type="text"
+                                                    value={sig.id}
+                                                    onChange={(e) => {
+                                                        const newSigs = [...formData?.signatures];
+                                                        newSigs[index].id = e.target.value.toLowerCase().replace(/\s+/g, '_');
+                                                        setFormData({ ...formData, signatures: newSigs });
+                                                    }}
+                                                    className="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white"
+                                                />
+                                            </div>
+                                            <div className="flex-1">
+                                                <label className="text-xs text-gray-500 block mb-1">Display Label</label>
+                                                <input
+                                                    type="text"
+                                                    value={sig.label}
+                                                    onChange={(e) => {
+                                                        const newSigs = [...formData?.signatures];
+                                                        newSigs[index].label = e.target.value;
+                                                        setFormData({ ...formData, signatures: newSigs });
+                                                    }}
+                                                    className="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white"
+                                                />
+                                            </div>
+                                            <div className="pt-5">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const newSigs = formData?.signatures.filter((_, i) => i !== index);
+                                                        setFormData({ ...formData, signatures: newSigs });
+                                                    }}
+                                                    className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setFormData({
+                                                ...formData,
+                                                signatures: [...formData?.signatures, { id: 'new_role', label: 'New Signature Role' }]
+                                            });
+                                        }}
+                                        className="w-full py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-600 dark:text-gray-400 hover:border-blue-500 hover:text-blue-500 transition text-sm font-medium"
+                                    >
+                                        + Add Signature Block
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                 {/* Footer */}
                 <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex justify-between gap-3">

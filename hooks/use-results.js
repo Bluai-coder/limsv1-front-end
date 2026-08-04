@@ -219,7 +219,7 @@ export const useCriticalNotifications = (status = "pending") => {
   return useQuery({
     queryKey: ["critical-notifications", status],
     queryFn: async () => {
-      const response = await api.get(`/critical-values/notifications?status=${status}`);
+      const response = await api.get(`/notifications?type=critical_value&status=${status}`);
       return response.data;
     },
     staleTime: 30000,
