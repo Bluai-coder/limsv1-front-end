@@ -76,8 +76,21 @@ export default function CreateTenantForm() {
       country: "India",
       latitude: "",
       longitude: "",
+      logoUrl: "",
     },
   });
+
+  const [paymentProcessed, setPaymentProcessed] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+
+  const handleProcessPayment = () => {
+    setIsProcessingPayment(true);
+    setTimeout(() => {
+      setPaymentProcessed(true);
+      setIsProcessingPayment(false);
+      toast.success("Payment verified successfully!");
+    }, 2000);
+  };
 
   const watchedSubdomain = watch("subdomain");
   const watchedName = watch("name");
@@ -394,9 +407,17 @@ export default function CreateTenantForm() {
       setLoading(true);
       console.log("Submitting data:", data);
 
+      const payload = {
+        ...data,
+        branding: {
+          logoUrl: data.logoUrl || ""
+        },
+        paymentProcessed
+      };
+
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_API_URL}/tenants/add`,
-        data
+        payload
       );
 
       console.log("Success:", response.data);
@@ -419,38 +440,31 @@ export default function CreateTenantForm() {
 
   const plans = [
     {
-      value: "free",
-      label: "Free",
-      price: "$0",
-      features: ["1 User", "100 Tests/month", "Basic Support"],
-      icon: Zap,
-    },
-    {
       value: "starter",
       label: "Starter",
       price: "$49",
-      features: ["5 Users", "1000 Tests/month", "Email Support"],
+      features: ["10 Users", "20GB Storage", "Basic Reports"],
       icon: Briefcase,
     },
     {
       value: "standard",
       label: "Standard",
       price: "$99",
-      features: ["10 Users", "5000 Tests/month", "Priority Support"],
+      features: ["50 Users", "100GB Storage", "Advanced Analytics"],
       icon: Shield,
     },
     {
-      value: "professional",
-      label: "Professional",
+      value: "premium",
+      label: "Premium",
       price: "$199",
-      features: ["25 Users", "20000 Tests/month", "24/7 Support"],
+      features: ["200 Users", "500GB Storage", "API Access"],
       icon: Server,
     },
     {
       value: "enterprise",
       label: "Enterprise",
       price: "Custom",
-      features: ["Unlimited Users", "Unlimited Tests", "Dedicated Support"],
+      features: ["Unlimited Users", "5TB Storage", "Custom Branding"],
       icon: Building,
     },
   ];
@@ -550,6 +564,28 @@ export default function CreateTenantForm() {
                         <p className="mt-1 text-xs text-red-500">
                           {errors.subdomain.message}
                         </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Logo URL */}
+                  <div className="mt-5">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Logo Image URL
+                    </label>
+                    <div className="flex gap-4 items-center">
+                      <div className="relative flex-1">
+                        <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                          {...register("logoUrl")}
+                          placeholder="https://example.com/logo.png"
+                          className="w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 border-gray-300 dark:border-gray-600"
+                        />
+                      </div>
+                      {watch("logoUrl") && (
+                        <div className="h-10 w-10 rounded overflow-hidden border dark:border-gray-600 flex-shrink-0 flex items-center justify-center bg-gray-50 dark:bg-gray-800">
+                          <img src={watch("logoUrl")} alt="Logo Preview" className="max-h-full max-w-full object-contain" onError={(e) => { e.target.style.display = 'none' }} />
+                        </div>
                       )}
                     </div>
                   </div>
@@ -917,6 +953,68 @@ export default function CreateTenantForm() {
                   </ul>
                 </div>
               )}
+            </div>
+            
+            {/* Payment Verification Section */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden p-6 mt-8">
+              <div className="flex items-center gap-2 mb-4">
+                <CreditCard className="w-5 h-5 text-blue-600" />
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Payment & Activation
+                </h2>
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Please verify that the initial subscription fee has been processed before provisioning the tenant environment.
+              </p>
+              
+              <div className="flex items-center gap-4 p-4 border rounded-xl dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+                <div className="flex-1">
+                  <p className="font-medium text-gray-900 dark:text-white text-sm">Subscription Status</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    {paymentProcessed ? "Payment Verified" : "Pending Verification"}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleProcessPayment}
+                  disabled={isProcessingPayment || paymentProcessed}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition ${
+                    paymentProcessed 
+                    ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" 
+                    : "bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                  }`}
+                >
+                  {isProcessingPayment ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Processing</>
+                  ) : paymentProcessed ? (
+                    <><CheckCircle className="w-4 h-4" /> Verified</>
+                  ) : (
+                    "Verify Payment"
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-8 flex justify-end gap-3">
+              <Link
+                href="/admin/tenants"
+                className="px-5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+              >
+                Cancel
+              </Link>
+              <button
+                type="submit"
+                disabled={loading || !paymentProcessed}
+                className="px-5 py-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition"
+                onClick={handleSubmit(onSubmit)}
+              >
+                {loading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Save className="w-5 h-5" />
+                )}
+                Create Tenant Environment
+              </button>
             </div>
 
             {watchedName && watchedSubdomain && (

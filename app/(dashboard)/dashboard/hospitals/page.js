@@ -243,7 +243,7 @@ export default function AllHospitalsAttachedCurrentLab() {
     const fetchHospitals = async () => {
         if (!tenant?.id) {
             setLoading(false);
-            setError('No lab tenant found. Please log in again.');
+            setError('No lab tenant found. Please log in again.'); 
             return;
         }
 
