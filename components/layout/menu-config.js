@@ -2,7 +2,7 @@ import {
   LayoutDashboard, Users, FileText, ClipboardList,
   FlaskConical, TestTubes, Settings, Shield,
   TestTube, IndianRupee, Workflow, UserCog, Beaker, Microscope, Activity, Bell, BarChart3, Database,
-  Package, History, Boxes
+  Package, History, Boxes, Truck
 } from "lucide-react";
 
 export const dashboardMenuConfig = [
@@ -45,6 +45,7 @@ export const dashboardMenuConfig = [
       { name: "Templates", module: "Templates", href: "/dashboard/templates", icon: FileText },
       { name: "Hospitals", module: "Hospitals", href: "/dashboard/hospitals", icon: TestTube },
       { name: "Inventory", module: "Inventory", href: "/dashboard/inventory", icon: Boxes },
+      { name: "Suppliers", module: "Inventory", href: "/dashboard/inventory-suppliers", icon: Truck },
       { name: "Settings", module: "Settings", href: "/dashboard/settings", icon: Settings },
       { name: "Physicians", module: "Physicians", href: "/dashboard/physician", icon: UserCog },
       { name: "Audit Logs", module: "Audit Logs", href: "/dashboard/audit-logs", icon: BarChart3 },

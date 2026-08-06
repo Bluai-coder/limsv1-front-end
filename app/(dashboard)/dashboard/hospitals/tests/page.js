@@ -481,7 +481,7 @@ export default function LabRecommendations() {
             setLoading(true);
             setError(null);
 
-            const endpoint = `http://192.168.1.32:3000/api/bluhealth/lab-recommendations/hospital/${hospitalId}/lab/${tenant.id}?page=${page}&limit=10`;
+            const endpoint = `http://192.168.1.19:3000/api/bluhealth/lab-recommendations/hospital/${hospitalId}/lab/${tenant.id}?page=${page}&limit=10`;
 
             const response = await fetch(endpoint, {
                 method: 'GET',
