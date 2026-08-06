@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useAuthStore } from '@/lib/auth-store';
 import { adminApi, authApi } from '@/lib/api';
-import { Eye, EyeOff, Building2, Settings, ArrowRight } from 'lucide-react';
+import { Eye, EyeOff, Building2, Settings, ArrowRight, ShieldCheck } from 'lucide-react';
 import CommonModal from '@/components/CommonModal';
 
 // ================= LOGIN TYPE SELECTION MODAL =================
@@ -310,6 +310,14 @@ export default function LoginPage() {
   const [showTypeModal, setShowTypeModal] = useState(true);
   const [loginType, setLoginType] = useState(null); // 'lab_tenant' or 'lab_management'
 
+  // 2FA states
+  const [is2FAStep, setIs2FAStep] = useState(false);
+  const [mfaSetupRequired, setMfaSetupRequired] = useState(false);
+  const [tempToken, setTempToken] = useState("");
+  const [totpCode, setTotpCode] = useState("");
+  const [qrCodeUrl, setQrCodeUrl] = useState("");
+  const [twoFaLoading, setTwoFaLoading] = useState(false);
+
   // Lab Tenant Login (Users/Owner) form fields
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -365,6 +373,31 @@ export default function LoginPage() {
       });
 
       const data = res?.data;
+
+      // Check if 2FA is required
+      if (data?.requires2FA) {
+        setTempToken(data.tempToken);
+        setMfaSetupRequired(data.mfaSetupRequired);
+        setIs2FAStep(true);
+        
+        // If setup is required, fetch the QR code immediately
+        if (data.mfaSetupRequired) {
+          try {
+            const qrRes = await authApi.customRequest({
+              method: 'POST',
+              url: '/auth/2fa/setup',
+              headers: { Authorization: `Bearer ${data.tempToken}` },
+              data: {}
+            });
+            if (qrRes?.data?.qrCodeDataUrl) {
+              setQrCodeUrl(qrRes.data.qrCodeDataUrl);
+            }
+          } catch (qrErr) {
+            setError("Failed to generate 2FA setup code.");
+          }
+        }
+        return;
+      }
       const permissionMap = Object.fromEntries(
         (data?.user?.permissions || data.data?.permissions || []).map((p) => [p.module, p.actions || []])
       );
@@ -433,6 +466,62 @@ export default function LoginPage() {
     logout();
     handleBackToTypeSelection();
   }, [logout, handleBackToTypeSelection]);
+
+  // ================= 2FA SUBMIT =================
+  const handle2FASubmit = useCallback(async (e) => {
+    e.preventDefault();
+    if (!totpCode || totpCode.length !== 6) {
+      setError("Please enter a valid 6-digit code.");
+      return;
+    }
+
+    setTwoFaLoading(true);
+    setError("");
+
+    try {
+      const endpoint = mfaSetupRequired ? '/auth/2fa/verify-setup' : '/auth/2fa/verify';
+      const res = await authApi.customRequest({
+        method: 'POST',
+        url: endpoint,
+        headers: { Authorization: `Bearer ${tempToken}` },
+        data: { token: totpCode }
+      });
+
+      const data = res?.data;
+      if (data?.success) {
+        const permissionMap = Object.fromEntries(
+          (data?.user?.permissions || []).map((p) => [p.module, p.actions || []])
+        );
+
+        const normalizedUser = {
+          ...data.user,
+          permissions: permissionMap,
+        };
+
+        setAuth({
+          accessToken: data.accessToken,
+          refreshToken: data.refreshToken,
+          user: normalizedUser,
+          tenant: data.tenant,
+        });
+
+        const apiRoles = data?.user?.roles || [];
+
+        if (apiRoles.length > 1) {
+          setRoles(apiRoles);
+          setIsHaveMultipleRoles(true);
+        } else {
+          loginType === 'lab_management' ? router.push("/admin/tenants") : router.push("/dashboard");
+        }
+      } else {
+        setError(data?.message || "Invalid 2FA code.");
+      }
+    } catch (err) {
+      setError(err?.response?.data?.message || "Invalid 2FA code.");
+    } finally {
+      setTwoFaLoading(false);
+    }
+  }, [totpCode, tempToken, mfaSetupRequired, loginType, setAuth, router]);
 
   // Show role modal first if multiple roles
   if (isHaveMultipleRoles) {
@@ -517,6 +606,76 @@ export default function LoginPage() {
   }
 
   // Show respective login form
+  if (is2FAStep) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 py-10 bg-gradient-to-br from-gray-50 via-white to-gray-100">
+        <div className="w-full max-w-md bg-white shadow-xl rounded-2xl p-8 border border-gray-100 text-center">
+          <div className="flex justify-center mb-6">
+            <ShieldCheck className="w-16 h-16 text-blue-500" />
+          </div>
+          <h2 className="text-2xl font-bold mb-2">Two-Factor Authentication</h2>
+          
+          {mfaSetupRequired ? (
+            <div className="mb-6">
+              <p className="text-sm text-gray-500 mb-4">
+                Your organization requires two-factor authentication. Please scan the QR code below with your authenticator app (like Google Authenticator or Authy).
+              </p>
+              {qrCodeUrl ? (
+                <div className="flex justify-center mb-4">
+                  <Image src={qrCodeUrl} alt="2FA QR Code" width={200} height={200} />
+                </div>
+              ) : (
+                <div className="flex justify-center items-center h-48 mb-4 bg-gray-100 rounded animate-pulse">
+                  <span className="text-gray-400">Loading QR Code...</span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500 mb-6">
+              Enter the 6-digit code from your authenticator app to continue.
+            </p>
+          )}
+
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm text-left">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handle2FASubmit} className="space-y-5">
+            <input
+              type="text"
+              required
+              maxLength={6}
+              value={totpCode}
+              onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, ''))}
+              placeholder="000000"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-center text-2xl tracking-widest"
+            />
+            <button
+              type="submit"
+              disabled={twoFaLoading}
+              className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium transition disabled:opacity-50"
+            >
+              {twoFaLoading ? "Verifying..." : "Verify Code"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setIs2FAStep(false);
+                setTotpCode("");
+                setError("");
+              }}
+              className="w-full py-2 text-gray-500 hover:text-gray-700 font-medium transition"
+            >
+              Cancel
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   if (loginType === 'lab_tenant') {
     return (
       <LabTenantLoginForm

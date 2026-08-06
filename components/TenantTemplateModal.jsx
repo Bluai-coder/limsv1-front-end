@@ -6,6 +6,7 @@ import { X, Save, Loader2, Eye, Palette, Type, Layout } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCreateAdminTemplate, useUpdateAdminTemplate } from '@/hooks/use-admin-templates';
 import { useCreatetenantTemplate, useUpdatetenantTemplate } from '../hooks/use-tenant-templates-pdf';
+import { api } from '@/lib/api';
 
 // Pre-built templates for non-technical users
 const PREBUILT_TEMPLATES = {
@@ -83,6 +84,11 @@ export default function TenantTemplateModal({ isOpen, onClose, mode, template, o
         type: 'laboratory',
         header_text: 'LABORATORY REPORT',
         lab_name: 'PathLIMS Diagnostics',
+        lab_subtitle: 'Accurate | Caring | Instant',
+        lab_address: 'Healthcare Road, Mumbai - 689578',
+        lab_email: 'support@pathlims.com',
+        lab_phone: '+91 9876543210',
+        lab_website: 'www.pathlims.com',
         primary_color: '#1b4dff',
         secondary_color: '#0e3a5f',
         show_patient_info: true,
@@ -99,12 +105,38 @@ export default function TenantTemplateModal({ isOpen, onClose, mode, template, o
     const isLoading = createTemplate.isPending || updateTemplate.isPending;
 
     useEffect(() => {
-        if (mode === 'edit' && template) {
+        if (!isOpen) return;
+
+        if (mode === 'create') {
+            // Auto-fill from System Settings
+            api.get('/settings').then(res => {
+                if (res.data?.data) {
+                    const s = res.data.data;
+                    const labSettings = s.settings?.lab || {};
+                    const branding = s.branding || {};
+                    
+                    setFormData(prev => ({
+                        ...prev,
+                        lab_name: labSettings.name || prev.lab_name,
+                        lab_address: [labSettings.address, labSettings.city, labSettings.state, labSettings.zip].filter(Boolean).join(', ') || prev.lab_address,
+                        lab_email: labSettings.email || prev.lab_email,
+                        lab_phone: labSettings.phone || prev.lab_phone,
+                        lab_website: labSettings.website || prev.lab_website,
+                        primary_color: branding.primaryColor || prev.primary_color,
+                    }));
+                }
+            }).catch(err => console.error("Failed to fetch system settings for template autofill", err));
+        } else if (mode === 'edit' && template) {
             setFormData({
                 name: template.name || '',
                 type: template.type || 'laboratory',
                 header_text: template.header_text || 'LABORATORY REPORT',
-                lab_name: template.lab_name || 'PathLIMS Diagnostics',
+                lab_name: template.header_config?.lab_name || template.lab_name || 'PathLIMS Diagnostics',
+                lab_subtitle: template.header_config?.lab_subtitle || 'Accurate | Caring | Instant',
+                lab_address: template.header_config?.lab_address || 'Healthcare Road, Mumbai - 689578',
+                lab_email: template.header_config?.lab_email || 'support@pathlims.com',
+                lab_phone: template.header_config?.lab_phone || '+91 9876543210',
+                lab_website: template.header_config?.lab_website || 'www.pathlims.com',
                 primary_color: template.primary_color || '#1b4dff',
                 secondary_color: template.secondary_color || '#0e3a5f',
                 show_patient_info: template.show_patient_info !== false,
@@ -116,7 +148,7 @@ export default function TenantTemplateModal({ isOpen, onClose, mode, template, o
                 css_styles: template.css_styles || PREBUILT_TEMPLATES.classic.css
             });
         }
-    }, [mode, template]);
+    }, [mode, template, isOpen]);
 
     const applyPreset = (presetKey) => {
         const preset = PREBUILT_TEMPLATES[presetKey];
@@ -208,7 +240,12 @@ export default function TenantTemplateModal({ isOpen, onClose, mode, template, o
             ...formData,
             header_config: {
                 ...(formData.header_config || {}),
-                lab_name: formData.lab_name
+                lab_name: formData.lab_name,
+                lab_subtitle: formData.lab_subtitle,
+                lab_address: formData.lab_address,
+                lab_email: formData.lab_email,
+                lab_phone: formData.lab_phone,
+                lab_website: formData.lab_website
             },
             css_styles: formData.css_styles
         };
@@ -497,17 +534,79 @@ export default function TenantTemplateModal({ isOpen, onClose, mode, template, o
                                 />
                             </div>
                             
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    Lab Name
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.lab_name}
-                                    onChange={(e) => setFormData({ ...formData, lab_name: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                                    placeholder="PathLIMS Diagnostics"
-                                />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="md:col-span-2">
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Lab Name
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formData.lab_name}
+                                        onChange={(e) => setFormData({ ...formData, lab_name: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                                        placeholder="PathLIMS Diagnostics"
+                                    />
+                                </div>
+                                <div className="md:col-span-2">
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Lab Subtitle
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formData.lab_subtitle}
+                                        onChange={(e) => setFormData({ ...formData, lab_subtitle: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                                        placeholder="Accurate | Caring | Instant"
+                                    />
+                                </div>
+                                <div className="md:col-span-2">
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Lab Address
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formData.lab_address}
+                                        onChange={(e) => setFormData({ ...formData, lab_address: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                                        placeholder="Healthcare Road, Mumbai - 689578"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Lab Email
+                                    </label>
+                                    <input
+                                        type="email"
+                                        value={formData.lab_email}
+                                        onChange={(e) => setFormData({ ...formData, lab_email: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                                        placeholder="support@pathlims.com"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Lab Phone
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formData.lab_phone}
+                                        onChange={(e) => setFormData({ ...formData, lab_phone: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                                        placeholder="+91 9876543210"
+                                    />
+                                </div>
+                                <div className="md:col-span-2">
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Lab Website
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formData.lab_website}
+                                        onChange={(e) => setFormData({ ...formData, lab_website: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                                        placeholder="www.pathlims.com"
+                                    />
+                                </div>
                             </div>
 
                             {/* Quick Templates */}
