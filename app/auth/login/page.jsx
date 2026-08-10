@@ -7,58 +7,84 @@ import { useAuthStore } from '@/lib/auth-store';
 import { adminApi, authApi } from '@/lib/api';
 import { Eye, EyeOff, Building2, Settings, ArrowRight, ShieldCheck } from 'lucide-react';
 import CommonModal from '@/components/CommonModal';
+import MedicalBackground3D from '@/components/ui/MedicalBackground3D';
+
+// ================= CUSTOM LOGO =================
+const BluLimsLogo = ({ className = "text-4xl" }) => (
+  <div className={`flex items-center font-bold tracking-tighter select-none ${className}`}>
+    <div className="bg-[#1b4dff] text-white px-2 pt-1 pb-1.5 leading-none shadow-md">Blu</div>
+    <div className="text-[#1b4dff] ml-1.5 leading-none tracking-tight">LIMS</div>
+  </div>
+);
 
 // ================= LOGIN TYPE SELECTION MODAL =================
 const LoginTypeModal = ({ onSelectLoginType }) => (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
-        <div className="flex justify-between items-center">
-          <h2 className="text-xl font-bold text-white">Select Login Type</h2>
+  <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <MedicalBackground3D />
+    
+    <div className="relative w-full max-w-md mx-4 animate-in fade-in zoom-in duration-500">
+      
+      {/* Modal Container */}
+      <div className="relative bg-white/95 backdrop-blur-2xl rounded-3xl shadow-[0_20px_60px_-15px_rgba(27,77,255,0.15)] overflow-hidden border border-white">
+        
+        {/* Header Section */}
+        <div className="px-8 pt-8 pb-6 text-center">
+          <div className="mx-auto w-16 h-16 bg-blue-50 text-[#1b4dff] rounded-full flex items-center justify-center mb-4 shadow-sm border border-blue-100">
+            <ShieldCheck className="w-8 h-8" />
+          </div>
+          <h2 className="text-2xl font-bold text-slate-800 tracking-tight">
+            Secure Authentication
+          </h2>
+          <p className="text-slate-500 text-sm mt-2">
+            Select your portal to access the LIMS network
+          </p>
         </div>
-        <p className="text-blue-100 text-sm mt-1">Choose how you want to access the system</p>
-      </div>
 
-      <div className="p-6 space-y-4">
-        {/* Lab Tenant Login Option */}
-        <button
-          onClick={() => onSelectLoginType('lab_tenant')}
-          className="w-full p-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all group"
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center group-hover:bg-blue-200 transition">
-              <Building2 className="w-6 h-6 text-blue-600" />
+        {/* Options Section */}
+        <div className="px-8 pb-8 space-y-4">
+          
+          {/* Lab Tenant Login Option */}
+          <button
+            onClick={() => onSelectLoginType('lab_tenant')}
+            className="relative w-full p-5 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-white hover:border-[#1b4dff]/40 hover:shadow-lg hover:shadow-[#1b4dff]/5 transition-all duration-300 group overflow-hidden text-left"
+          >
+            <div className="relative flex items-center gap-5">
+              <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center group-hover:scale-110 group-hover:bg-[#1b4dff] transition-all duration-300 shadow-sm border border-slate-100 group-hover:border-[#1b4dff]">
+                <Building2 className="w-6 h-6 text-[#1b4dff] group-hover:text-white transition-colors" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-slate-800 group-hover:text-[#1b4dff] transition-colors">Lab Tenant Portal</h3>
+                <p className="text-xs text-slate-500 mt-1">For lab staff, directors, and pathologists</p>
+              </div>
+              <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-[#1b4dff] group-hover:translate-x-1 transition-all duration-300" />
             </div>
-            <div className="flex-1 text-left">
-              <h3 className="font-semibold text-gray-900 dark:text-white">Lab Tenant Login</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">For lab users, owners, and staff members</p>
-            </div>
-            <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition" />
-          </div>
-        </button>
+          </button>
 
-        {/* Lab Management Login Option */}
-        <button
-          onClick={() => onSelectLoginType('lab_management')}
-          className="w-full p-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all group"
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center group-hover:bg-purple-200 transition">
-              <Settings className="w-6 h-6 text-purple-600" />
+          {/* Lab Management Login Option */}
+          <button
+            onClick={() => onSelectLoginType('lab_management')}
+            className="relative w-full p-5 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-white hover:border-[#1b4dff]/40 hover:shadow-lg hover:shadow-[#1b4dff]/5 transition-all duration-300 group overflow-hidden text-left"
+          >
+            <div className="relative flex items-center gap-5">
+              <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center group-hover:scale-110 group-hover:bg-[#1b4dff] transition-all duration-300 shadow-sm border border-slate-100 group-hover:border-[#1b4dff]">
+                <Settings className="w-6 h-6 text-[#1b4dff] group-hover:text-white transition-colors" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-slate-800 group-hover:text-[#1b4dff] transition-colors">Management Portal</h3>
+                <p className="text-xs text-slate-500 mt-1">For platform super admins and configuration</p>
+              </div>
+              <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-[#1b4dff] group-hover:translate-x-1 transition-all duration-300" />
             </div>
-            <div className="flex-1 text-left">
-              <h3 className="font-semibold text-gray-900 dark:text-white">Tenant Management Login</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">For administrators and super admins</p>
-            </div>
-            <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-purple-500 group-hover:translate-x-1 transition" />
-          </div>
-        </button>
-      </div>
+          </button>
+        </div>
 
-      <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-        <p className="text-xs text-center text-gray-500 dark:text-gray-400">
-          Secure access to BluLIMS platform
-        </p>
+        {/* Footer */}
+        <div className="px-8 py-4 border-t border-slate-100 bg-slate-50/50">
+          <p className="text-xs text-center text-slate-500 flex items-center justify-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50"></span>
+            Encrypted connection established
+          </p>
+        </div>
       </div>
     </div>
   </div>
@@ -66,123 +92,96 @@ const LoginTypeModal = ({ onSelectLoginType }) => (
 
 // ================= LAB TENANT LOGIN FORM =================
 const LabTenantLoginForm = ({
-  tenant,
-  setTenant,
-  email,
-  setEmail,
-  password,
-  setPassword,
-  showPassword,
-  setShowPassword,
-  error,
-  loading,
-  onSubmit,
-  onBack
+  tenant, setTenant, email, setEmail, password, setPassword,
+  showPassword, setShowPassword, error, loading, onSubmit, onBack
 }) => (
-  <div className="min-h-screen flex flex-col lg:flex-row">
-    {/* LEFT PANEL */}
-    <div className="hidden md:flex md:w-full lg:w-1/2 bg-blue-600 text-white">
-      <div className="flex flex-col justify-center px-6 sm:px-10 lg:px-16 py-12 w-full">
-        <div className="h-18 flex items-center gap-3 border-gray-200 w-[130px]">
-          <Image
-            src="/blu-login.png"
-            alt="BluLIMS"
-            width={180}
-            height={96}
-            className="h-8 sm:h-9 md:h-24 w-auto max-w-[180px] object-contain"
-          />
-        </div>
-        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4">
-          Precision in Every Result
-        </h2>
-        <p className="text-sm sm:text-base text-indigo-200 max-w-md">
-          End-to-end lab workflow for Clinical & Anatomic Pathology.
-        </p>
-        <div className="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {["CP Workflow", "AP Workflow", "QC/QA"].map((item) => (
-            <div key={item} className="bg-white/10 p-4 rounded-lg">{item}</div>
-          ))}
-        </div>
-      </div>
-    </div>
-
-    {/* RIGHT PANEL */}
-    <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-10 bg-gradient-to-br from-gray-50 via-white to-gray-100">
-      <div className="w-full max-w-md bg-white shadow-xl rounded-2xl p-8 border border-gray-100">
-        {/* Back Button */}
-        <button
-          onClick={onBack}
-          className="mb-4 text-sm text-gray-500 hover:text-blue-600 flex items-center gap-1"
-        >
-          ← Back to login type
-        </button>
-
-        {/* Mobile Logo */}
-        <div className="md:hidden flex justify-center mb-6">
-          <Image
-            src="/blu-lims.png"
-            alt="BluLIMS"
-            width={180}
-            height={64}
-            className="h-8 sm:h-9 md:h-16 w-auto max-w-[180px] object-contain"
-          />
-        </div>
-
-        <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">
-          Welcome back
-        </h2>
-        <p className="text-gray-500 mb-6 text-sm">
-          Sign in to your workspace
-        </p>
-
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm">
-            {error}
+  <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <MedicalBackground3D />
+    
+    <div className="relative w-full max-w-4xl mx-auto animate-in fade-in zoom-in duration-500">
+      {/* Glass Card Container (Split Layout) */}
+      <div className="relative flex flex-col md:flex-row bg-white/95 backdrop-blur-2xl rounded-3xl shadow-[0_20px_60px_-15px_rgba(27,77,255,0.15)] overflow-hidden border border-white min-h-[550px]">
+        
+        {/* LEFT PANEL: Branding */}
+        <div className="hidden md:flex flex-col justify-between w-1/2 p-12 bg-slate-50/50 border-r border-slate-100 relative overflow-hidden group">
+          {/* Subtle floating background icon */}
+          <Building2 className="absolute -bottom-10 -left-10 w-72 h-72 text-blue-50/50 group-hover:text-blue-100/50 group-hover:scale-110 transition-all duration-1000 rotate-12" />
+          
+          <div className="relative z-10">
+            <div className="h-12 flex items-center mb-12">
+              <BluLimsLogo className="text-5xl" />
+            </div>
+            <h2 className="text-3xl font-bold text-slate-800 tracking-tight leading-tight">
+              Precision in <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1b4dff] to-blue-400">Every Result</span>
+            </h2>
+            <p className="text-slate-500 mt-4 max-w-sm text-sm leading-relaxed">
+              End-to-end laboratory workflow management for Clinical & Anatomic Pathology.
+            </p>
           </div>
-        )}
 
-        <form onSubmit={onSubmit} className="space-y-5 mt-6">
-          <input
-            value={tenant}
-            type="text"
-            required
-            onChange={(e) => setTenant(e.target.value)}
-            placeholder="Subdomain"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <input
-            type="email"
-            value={email}
-            required
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Email"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <div className="relative">
-            <input
-              type={showPassword ? 'text' : 'password'}
-              value={password}
-              required
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2"
-            >
-              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-            </button>
+          <div className="relative z-10 flex gap-3 flex-wrap mt-12">
+            {["CP Workflow", "AP Workflow", "QC/QA"].map((item) => (
+              <span key={item} className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs text-slate-600 shadow-sm font-medium">
+                {item}
+              </span>
+            ))}
           </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium transition disabled:opacity-50"
-          >
-            {loading ? "Signing in..." : "Sign in"}
+        </div>
+
+        {/* RIGHT PANEL: Form */}
+        <div className="flex-1 flex flex-col justify-center p-8 md:p-12 relative bg-white">
+          <button onClick={onBack} className="absolute top-8 right-8 text-sm text-slate-400 hover:text-[#1b4dff] flex items-center gap-2 transition-colors group font-medium">
+            <ArrowRight className="w-4 h-4 rotate-180 group-hover:-translate-x-1 transition-transform" /> Back
           </button>
-        </form>
+
+          <div className="md:hidden flex justify-center mb-8">
+            <BluLimsLogo className="text-4xl" />
+          </div>
+
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Lab Portal Login</h2>
+            <p className="text-slate-500 text-sm mt-1">Sign in to your secure tenant workspace</p>
+          </div>
+
+          {error && (
+            <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-100 flex items-start gap-3">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5 shrink-0 shadow-sm shadow-red-500/50"></span>
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
+
+          <form onSubmit={onSubmit} className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-600 ml-1">Workspace ID</label>
+              <input value={tenant} type="text" required onChange={(e) => setTenant(e.target.value)} placeholder="your-lab-id"
+                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#1b4dff] focus:ring-4 focus:ring-[#1b4dff]/10 transition-all font-medium"
+              />
+            </div>
+            
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-600 ml-1">Email Address</label>
+              <input type="email" value={email} required onChange={(e) => setEmail(e.target.value)} placeholder="name@laboratory.com"
+                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#1b4dff] focus:ring-4 focus:ring-[#1b4dff]/10 transition-all font-medium"
+              />
+            </div>
+            
+            <div className="space-y-1.5 relative">
+              <label className="text-xs font-semibold text-slate-600 ml-1">Password</label>
+              <input type={showPassword ? 'text' : 'password'} value={password} required onChange={(e) => setPassword(e.target.value)} placeholder="••••••••"
+                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#1b4dff] focus:ring-4 focus:ring-[#1b4dff]/10 transition-all pr-12 font-medium"
+              />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 bottom-3.5 text-slate-400 hover:text-[#1b4dff] transition-colors">
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
+
+            <button type="submit" disabled={loading}
+              className="w-full mt-8 py-4 bg-[#1b4dff] hover:bg-blue-600 text-white rounded-xl font-semibold shadow-lg shadow-[#1b4dff]/20 hover:shadow-xl hover:shadow-[#1b4dff]/30 transition-all disabled:opacity-50"
+            >
+              {loading ? "Authenticating..." : "Access Workspace"}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   </div>
@@ -190,113 +189,89 @@ const LabTenantLoginForm = ({
 
 // ================= LAB MANAGEMENT LOGIN FORM =================
 const LabManagementLoginForm = ({
-  adminEmail,
-  setAdminEmail,
-  adminPassword,
-  setAdminPassword,
-  showPassword,
-  setShowPassword,
-  error,
-  loading,
-  onSubmit,
-  onBack
+  adminEmail, setAdminEmail, adminPassword, setAdminPassword,
+  showPassword, setShowPassword, error, loading, onSubmit, onBack
 }) => (
-  <div className="min-h-screen flex flex-col lg:flex-row">
-    {/* LEFT PANEL */}
-    <div className="hidden md:flex md:w-full lg:w-1/2 bg-gradient-to-br from-purple-600 to-gray-900 text-white">
-      <div className="flex flex-col justify-center px-6 sm:px-10 lg:px-16 py-12 w-full">
-        <div className="h-18 flex items-center gap-3 w-[130px]">
-          <Image
-            src="/blu-login.png"
-            alt="BluLIMS"
-            width={180}
-            height={96}
-            className="h-8 sm:h-9 md:h-24 w-auto max-w-[180px] object-contain brightness-0 invert"
-          />
-        </div>
-        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4">
-          Tenant Management Portal
-        </h2>
-        <p className="text-sm sm:text-base text-purple-200 max-w-md">
-          Centralized control for all laboratory operations and administration.
-        </p>
-        <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {["Tenant Management", "User Management", "System Settings"].map((item) => (
-            <div key={item} className="bg-white/10 p-4 rounded-lg">{item}</div>
-          ))}
-        </div>
-      </div>
-    </div>
-
-    {/* RIGHT PANEL */}
-    <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-10 bg-gradient-to-br from-gray-50 via-white to-gray-100">
-      <div className="w-full max-w-md bg-white shadow-xl rounded-2xl p-8 border border-gray-100">
-        {/* Back Button */}
-        <button
-          onClick={onBack}
-          className="mb-4 text-sm text-gray-500 hover:text-purple-600 flex items-center gap-1"
-        >
-          ← Back to login type
-        </button>
-
-        {/* Mobile Logo */}
-        <div className="md:hidden flex justify-center mb-6">
-          <Image
-            src="/blu-lims.png"
-            alt="BluLIMS"
-            width={180}
-            height={64}
-            className="h-8 sm:h-9 md:h-16 w-auto max-w-[180px] object-contain"
-          />
-        </div>
-
-        <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">
-          Admin Login
-        </h2>
-        <p className="text-gray-500 mb-6 text-sm">
-          Administrator access only
-        </p>
-
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm">
-            {error}
+  <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <MedicalBackground3D />
+    
+    <div className="relative w-full max-w-4xl mx-auto animate-in fade-in zoom-in duration-500">
+      {/* Glass Card Container (Split Layout) */}
+      <div className="relative flex flex-col md:flex-row bg-white/95 backdrop-blur-2xl rounded-3xl shadow-[0_20px_60px_-15px_rgba(27,77,255,0.15)] overflow-hidden border border-white min-h-[550px]">
+        
+        {/* LEFT PANEL: Branding */}
+        <div className="hidden md:flex flex-col justify-between w-1/2 p-12 bg-slate-50/50 border-r border-slate-100 relative overflow-hidden group">
+          {/* Subtle floating background icon */}
+          <Settings className="absolute -bottom-10 -left-10 w-72 h-72 text-blue-50/50 group-hover:text-blue-100/50 group-hover:scale-110 group-hover:rotate-45 transition-all duration-1000" />
+          
+          <div className="relative z-10">
+            <div className="flex items-center mb-12">
+              <BluLimsLogo className="text-5xl" />
+            </div>
+            <h2 className="text-3xl font-bold text-slate-800 tracking-tight leading-tight">
+              Platform <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1b4dff] to-blue-400">Management</span>
+            </h2>
+            <p className="text-slate-500 mt-4 max-w-sm text-sm leading-relaxed">
+              Centralized administrative control and configuration for all lab tenant operations.
+            </p>
           </div>
-        )}
 
-        <form onSubmit={onSubmit} className="space-y-5 mt-6">
-          <input
-            type="email"
-            value={adminEmail}
-            required
-            onChange={(e) => setAdminEmail(e.target.value)}
-            placeholder="Admin Email"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-          />
-          <div className="relative">
-            <input
-              type={showPassword ? 'text' : 'password'}
-              value={adminPassword}
-              required
-              onChange={(e) => setAdminPassword(e.target.value)}
-              placeholder="Password"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 pr-10"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2"
-            >
-              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-            </button>
+          <div className="relative z-10 flex gap-3 flex-wrap mt-12">
+            {["System Settings", "User Management", "Global Metrics"].map((item) => (
+              <span key={item} className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs text-slate-600 shadow-sm font-medium">
+                {item}
+              </span>
+            ))}
           </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 bg-gradient-to-br from-purple-600 to-gray-900 hover:from-purple-700 hover:to-gray-900 text-white rounded-lg font-medium transition disabled:opacity-50"
-          >
-            {loading ? "Signing in..." : "Sign in as Admin"}
+        </div>
+
+        {/* RIGHT PANEL: Form */}
+        <div className="flex-1 flex flex-col justify-center p-8 md:p-12 relative bg-white">
+          <button onClick={onBack} className="absolute top-8 right-8 text-sm text-slate-400 hover:text-[#1b4dff] flex items-center gap-2 transition-colors group font-medium">
+            <ArrowRight className="w-4 h-4 rotate-180 group-hover:-translate-x-1 transition-transform" /> Back
           </button>
-        </form>
+
+          <div className="md:hidden flex justify-center mb-8">
+            <BluLimsLogo className="text-4xl" />
+          </div>
+
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Admin Portal</h2>
+            <p className="text-slate-500 text-sm mt-1">Super administrator access only</p>
+          </div>
+
+          {error && (
+            <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-100 flex items-start gap-3">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5 shrink-0 shadow-sm shadow-red-500/50"></span>
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
+
+          <form onSubmit={onSubmit} className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-600 ml-1">Admin Email</label>
+              <input type="email" value={adminEmail} required onChange={(e) => setAdminEmail(e.target.value)} placeholder="admin@blulims.com"
+                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#1b4dff] focus:ring-4 focus:ring-[#1b4dff]/10 transition-all font-medium"
+              />
+            </div>
+            
+            <div className="space-y-1.5 relative">
+              <label className="text-xs font-semibold text-slate-600 ml-1">Admin Password</label>
+              <input type={showPassword ? 'text' : 'password'} value={adminPassword} required onChange={(e) => setAdminPassword(e.target.value)} placeholder="••••••••"
+                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#1b4dff] focus:ring-4 focus:ring-[#1b4dff]/10 transition-all pr-12 font-medium"
+              />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 bottom-3.5 text-slate-400 hover:text-[#1b4dff] transition-colors">
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
+
+            <button type="submit" disabled={loading}
+              className="w-full mt-8 py-4 bg-[#1b4dff] hover:bg-blue-600 text-white rounded-xl font-semibold shadow-lg shadow-[#1b4dff]/20 hover:shadow-xl hover:shadow-[#1b4dff]/30 transition-all disabled:opacity-50"
+            >
+              {loading ? "Authenticating..." : "Authorize Access"}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   </div>
@@ -526,77 +501,105 @@ export default function LoginPage() {
   // Show role modal first if multiple roles
   if (isHaveMultipleRoles) {
     return (
-      <CommonModal
-        open={isHaveMultipleRoles}
-        title="Select Role"
-        description="Choose your role to continue"
-        onClose={closeHandler}
-        onClick={goToDashboard}
-        submitText="Continue to Dashboard"
-        cancelText="Cancel"
-      >
-        <div className="space-y-3">
-          {roles.map((role) => (
-            <button
-              key={role.id}
-              onClick={() => goToDashboard(role.id)}
-              className={`
-          w-full p-4 rounded-xl text-left transition-all duration-200
-          flex items-center gap-4
-          ${selectedRole === role.id
-                  ? "bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-2 border-blue-500 dark:border-blue-400 shadow-md"
-                  : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-sm"
-                }
-        `}
-            >
-              {/* Role Icon */}
-              <div className={`
-          w-12 h-12 rounded-full flex items-center justify-center transition-all
-          ${selectedRole === role.id
-                  ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-md"
-                  : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
-                }
-        `}>
-                {role.name === 'Admin' || role.name === 'Super Admin' ? (
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                ) : role.name === 'Pathologist' ? (
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
-                ) : (
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                  </svg>
-                )}
+      <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <MedicalBackground3D />
+        
+        <div className="relative w-full max-w-md mx-4 animate-in fade-in zoom-in duration-500">
+          
+          {/* Modal Container */}
+          <div className="relative bg-white/95 backdrop-blur-2xl rounded-3xl shadow-[0_20px_60px_-15px_rgba(27,77,255,0.15)] overflow-hidden border border-white flex flex-col max-h-[90vh]">
+            
+            {/* Header Section */}
+            <div className="px-8 pt-8 pb-6 text-center shrink-0">
+              <div className="mx-auto w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4 border border-blue-100 shadow-sm">
+                <ShieldCheck className="w-8 h-8 text-[#1b4dff]" />
               </div>
+              <h2 className="text-2xl font-bold text-slate-800 tracking-tight">
+                Select Role
+              </h2>
+              <p className="text-slate-500 text-sm mt-2">
+                Choose your role to continue
+              </p>
+            </div>
 
-              {/* Role Info */}
-              <div className="flex-1">
-                <h3 className={`font-semibold text-lg ${selectedRole === role.id
-                  ? "text-gray-900 dark:text-white"
-                  : "text-gray-800 dark:text-gray-200"
-                  }`}>
-                  {role.name}
-                </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {role.description || `Access with ${role.name} permissions`}
-                </p>
-              </div>
+            {/* Options Section */}
+            <div className="px-8 pb-4 space-y-3 overflow-y-auto">
+              {roles.map((role) => (
+                <button
+                  key={role.id}
+                  onClick={() => setSelectedRole(role.id)}
+                  className={`
+                    relative w-full p-4 rounded-2xl transition-all duration-300 group overflow-hidden text-left border
+                    ${selectedRole === role.id
+                      ? "bg-blue-50/50 border-[#1b4dff]/50 shadow-md shadow-[#1b4dff]/10"
+                      : "bg-slate-50 border-slate-100 hover:bg-white hover:border-[#1b4dff]/30 hover:shadow-sm"
+                    }
+                  `}
+                >
+                  <div className="relative flex items-center gap-4">
+                    <div className={`
+                      w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 border
+                      ${selectedRole === role.id
+                        ? "bg-[#1b4dff] border-[#1b4dff] text-white shadow-md shadow-[#1b4dff]/30"
+                        : "bg-white border-slate-200 text-[#1b4dff] group-hover:bg-blue-50 group-hover:border-blue-200"
+                      }
+                    `}>
+                      {role.name === 'Admin' || role.name === 'Super Admin' ? (
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                      ) : role.name === 'Pathologist' ? (
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg>
+                      ) : (
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                      )}
+                    </div>
+                    
+                    <div className="flex-1">
+                      <h3 className={`font-semibold transition-colors ${selectedRole === role.id ? "text-[#1b4dff]" : "text-slate-800"}`}>
+                        {role.name}
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-1">
+                        {role.description || `Access with ${role.name} permissions`}
+                      </p>
+                    </div>
 
-              {/* Selected Checkmark */}
-              {selectedRole === role.id && (
-                <div className="flex-shrink-0">
-                  <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-              )}
-            </button>
-          ))}
+                    {selectedRole === role.id && (
+                      <div className="flex-shrink-0 animate-in zoom-in duration-200">
+                        <svg className="w-6 h-6 text-[#1b4dff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {/* Actions Section */}
+            <div className="px-8 pb-8 pt-4 flex gap-4 shrink-0 bg-white">
+              <button 
+                onClick={closeHandler} 
+                className="flex-1 py-3 px-4 rounded-xl font-medium border border-slate-200 text-slate-600 hover:text-slate-800 hover:bg-slate-50 transition-all"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={() => goToDashboard(selectedRole)} 
+                disabled={!selectedRole} 
+                className="flex-1 py-3 px-4 rounded-xl font-semibold bg-[#1b4dff] hover:bg-blue-600 text-white shadow-lg shadow-[#1b4dff]/20 transition-all disabled:opacity-50"
+              >
+                Continue
+              </button>
+            </div>
+
+          </div>
         </div>
-      </CommonModal>
+      </div>
     );
   }
 

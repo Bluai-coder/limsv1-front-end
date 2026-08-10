@@ -330,16 +330,16 @@ export default function NotificationsPage() {
                       {/* Action Link */}
                       {notif.action_url && (
                         <Link
-                          href={notif.action_url}
+                          href={notif.action_url.startsWith('http') || notif.action_url.startsWith('/dashboard') ? notif.action_url : (notif.action_url.startsWith('/') ? `/dashboard${notif.action_url}` : `/dashboard/${notif.action_url}`)}
                           onClick={() => {
                             if (notif.status !== 'read') {
                               handleMarkAsRead(notif.id);
                             }
                           }}
-                          className="inline-flex items-center gap-1 mt-3 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 hover:underline transition"
+                          className="mt-3 inline-flex items-center text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
                         >
                           View details
-                          <ArrowLeft className="w-3 h-3 rotate-180" />
+                          <ArrowLeft className="w-3 h-3 ml-1 rotate-180" />
                         </Link>
                       )}
                     </div>
