@@ -228,7 +228,7 @@ export default function WorklistPage() {
     const progress = item.progress || { entered: 0, total: 0 };
     const alerts = item.alerts || {};
 
-    if (alerts.has_critical && status !== 'reported') {
+    if (alerts.has_critical && !['reported', 'path_verified', 'tech_verified', 'verified'].includes(status)) {
       return (
         <button
           onClick={() => handlePathReview(item.id)}
