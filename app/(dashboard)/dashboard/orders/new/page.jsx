@@ -294,7 +294,10 @@ export default function NewOrderPage() {
               {/* Physician Selection */}
               <div className="relative z-20 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border border-gray-200/60 dark:border-gray-700/60 rounded-xl shadow-sm overflow-visible">
                 <div className="p-6">
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Physician / Referring Doctor</h2>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                    Physician / Referring Doctor
+                    <span className="text-xs font-normal text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">Optional</span>
+                  </h2>
 
                   {selectedPhysician ? (
                     <div className="flex justify-between items-center bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-5">
@@ -337,7 +340,7 @@ export default function NewOrderPage() {
                         className="w-full pl-12 pr-5 py-4 border border-gray-200 dark:border-gray-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#1b4dff] text-base bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 transition-colors"
                       />
 
-                      {showPhysicianDropdown && (
+                      {showPhysicianDropdown && physicianSearch && (
                         <div className="absolute z-50 w-full mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl max-h-80 overflow-auto">
                           {physiciansLoading ? (
                             <div className="p-6 text-center text-gray-500 dark:text-gray-400">

@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import {
     Search,
     Plus,
@@ -15,19 +14,14 @@ import {
     Calendar,
     User,
     Stethoscope,
-    FileText,
     Beaker,
     Clock,
-    MapPin,
-    Phone,
-    Mail,
     CreditCard,
     AlertCircle
 } from 'lucide-react';
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
-import { usePermissions } from '@/hooks/permissions/usePermissions';
 import { useAuthStore } from '@/lib/auth-store';
 import { useCreateOrderForBluHealth } from '@/hooks/use-orders';
 
@@ -370,7 +364,7 @@ const OrderCard = ({ order, onViewDetails, createOrder }) => {
                     </div>
 
                     <div className="flex items-center gap-2">
-                       {orderData?.status === 'pending' && (
+                        {orderData?.status === 'pending' && (
                             <button
                                 onClick={() => createOrder(order)}
                                 className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
@@ -378,7 +372,7 @@ const OrderCard = ({ order, onViewDetails, createOrder }) => {
                             >
                                 <Plus className="w-4 h-4" />
                             </button>
-                        )} 
+                        )}
                         <button
                             onClick={() => setIsExpanded(!isExpanded)}
                             className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
@@ -481,7 +475,7 @@ export default function LabRecommendations() {
             setLoading(true);
             setError(null);
 
-            const endpoint = `http://192.168.1.19:3000/api/bluhealth/lab-recommendations/hospital/${hospitalId}/lab/${tenant.id}?page=${page}&limit=10`;
+            const endpoint = `${process.env.NEXT_PUBLIC_API_FORBLUHEALTH}/api/bluhealth/lab-recommendations/hospital/${hospitalId}/lab/${tenant.id}?page=${page}&limit=10`;
 
             const response = await fetch(endpoint, {
                 method: 'GET',
@@ -496,7 +490,7 @@ export default function LabRecommendations() {
             if (apiResponse?.success && apiResponse?.data) {
                 const data = apiResponse.data;
 
-                // Create hospital data with proper mapping
+                // Create hospital data with proper mapping 
                 const hospitalData = {
                     id: data.hospital?.id || 1,
                     name: data.hospital?.name || 'Unknown Hospital',

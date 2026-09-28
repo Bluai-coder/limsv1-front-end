@@ -394,11 +394,10 @@ export default function NotificationBell() {
                               </h4>
                               {getPriorityBadge(notification.priority)}
                             </div>
-
                             <p className={`text-xs sm:text-sm mt-1 break-words ${isUnseen(notification)
                               ? 'text-gray-600 dark:text-gray-400'
                               : 'text-gray-500 dark:text-gray-500'
-                              }`}>
+                              }`}> 
                               {notification.message}
                             </p>
 
@@ -440,23 +439,6 @@ export default function NotificationBell() {
                             </button>
                           </div>
                         </div>
-
-                        {/* link */}
-                        {notification.action_url && (
-                          <Link
-                            href={notification.action_url}
-                            onClick={() => {
-                              if (notification.status !== 'read') {
-                                handleMarkAsRead(notification.id);
-                              }
-                              setIsOpen(false);
-                            }}
-                            className="mt-2 inline-flex items-center gap-1 text-xs text-blue-600 hover:underline dark:text-blue-400"
-                          >
-                            View details
-                            <ExternalLink className="w-3 h-3" />
-                          </Link>
-                        )}
                       </div>
                     </div>
                   </div>

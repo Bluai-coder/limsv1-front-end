@@ -24,7 +24,7 @@ export function useScanSpecimen() {
       specimenApi.scan(barcode).then((r) => r.data),
 
     onSuccess: () => {
-      qc.invalidateQueries(["specimens"]);
+      qc.invalidateQueries({ queryKey: ['specimens'] });
     },
   });
 }
@@ -72,9 +72,13 @@ export function useReceiveSpecimen() {
 // aliquots scan
 
 export function useScanAliquot() {
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: (barcode) =>
       api.post("/specimens/aliquots/scan", { barcode }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['specimens'] });
+    },
   });
 }
 

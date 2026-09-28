@@ -45,6 +45,13 @@ const getGenderBadge = (gender) => {
   return <span className={`px-2.5 py-1 rounded-lg text-xs font-medium ${color}`}>{gender || 'Not specified'}</span>;
 };
 
+import {
+  usePatientHistory,
+  useCreatePatientAlert,
+  useCreatePatientFlag,
+  usePatientMerge
+} from '@/hooks/use-patients';
+
 const getStatusBadge = (status) => {
   const statusMap = {
     active: { bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-700 dark:text-green-300', icon: CheckCircle },
@@ -65,6 +72,22 @@ const getStatusBadge = (status) => {
 export default function PatientDetailsPopup({ patient, isOpen, onClose, onViewOrders }) {
   const [activeTab, setActiveTab] = useState('details');
   const [isAnimating, setIsAnimating] = useState(false);
+  const [showMergeModal, setShowMergeModal] = useState(false);
+  const [targetPatientId, setTargetPatientId] = useState('');
+
+  const { data: historyData } = usePatientHistory(patient?.id);
+  const mergePatient = usePatientMerge();
+
+  const handleMerge = async () => {
+    if (!targetPatientId) return;
+    try {
+      await mergePatient.mutateAsync({ id: patient.id, targetPatientId });
+      setShowMergeModal(false);
+      onClose(); // Close popup after successful merge
+    } catch (err) {
+      // error handled by global toast
+    }
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -179,6 +202,13 @@ export default function PatientDetailsPopup({ patient, isOpen, onClose, onViewOr
             </div>
             <div className="flex items-center gap-2">
               <button
+                onClick={() => setShowMergeModal(true)}
+                className="p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors text-xs font-semibold px-3"
+                title="Merge Patient"
+              >
+                Merge Patient
+              </button>
+              <button
                 onClick={() => onViewOrders?.(patient.id)}
                 className="p-2 hover:bg-white/10 rounded-lg transition-colors"
                 title="View Orders"
@@ -278,6 +308,32 @@ export default function PatientDetailsPopup({ patient, isOpen, onClose, onViewOr
             })}
           </div>
         </div>
+
+        {/* Alerts and Flags Banner */}
+        {historyData?.alerts?.length > 0 && (
+          <div className="bg-red-50 dark:bg-red-900/30 border-b border-red-200 dark:border-red-800 p-4">
+            <h4 className="text-red-800 dark:text-red-400 font-semibold text-sm flex items-center gap-2 mb-2">
+              <AlertCircle className="w-4 h-4" /> Active Alerts
+            </h4>
+            <div className="flex flex-wrap gap-2">
+              {historyData.alerts.map(a => (
+                <span key={a.id} className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-medium">{a.message}</span>
+              ))}
+            </div>
+          </div>
+        )}
+        {historyData?.flags?.length > 0 && (
+          <div className="bg-yellow-50 dark:bg-yellow-900/30 border-b border-yellow-200 dark:border-yellow-800 p-4">
+            <h4 className="text-yellow-800 dark:text-yellow-400 font-semibold text-sm flex items-center gap-2 mb-2">
+              <Activity className="w-4 h-4" /> Patient Flags
+            </h4>
+            <div className="flex flex-wrap gap-2">
+              {historyData.flags.map(f => (
+                <span key={f.id} className="text-white px-3 py-1 rounded-full text-xs font-medium shadow-sm" style={{ backgroundColor: f.color || '#F59E0B' }}>{f.flag_name}</span>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Content */}
         <div className="overflow-y-auto h-[calc(100vh-220px)] p-5">

@@ -9,6 +9,40 @@ import {
   ShieldCheck, Bell, Mail, Smartphone, Info 
 } from "lucide-react";
 
+const InputField = ({ label, value, onChange, placeholder, type = "text", disabled = false, min, max, step }) => (
+  <div>
+    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{label}</label>
+    <input 
+      type={type}
+      value={value ?? ""}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      disabled={disabled}
+      min={min}
+      max={max}
+      step={step}
+      className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all text-gray-900 dark:text-white disabled:opacity-60"
+    />
+  </div>
+);
+
+const ToggleSwitch = ({ label, checked, onChange, description, disabled = false }) => (
+  <div className="flex items-start space-x-3 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800">
+    <div className="flex-1">
+      <label className="text-sm font-semibold text-gray-900 dark:text-white block">{label}</label>
+      {description && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{description}</p>}
+    </div>
+    <button 
+      type="button"
+      disabled={disabled}
+      onClick={() => onChange(!checked)}
+      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${checked ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'} disabled:opacity-50`}
+    >
+      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${checked ? 'translate-x-6' : 'translate-x-1'}`} />
+    </button>
+  </div>
+);
+
 export default function SettingsPage() {
   const { isAdmin } = usePermissions();
   const [activeTab, setActiveTab] = useState("lab");
@@ -45,15 +79,29 @@ export default function SettingsPage() {
       const res = await api.get('/settings');
       if (res.data && res.data.data) {
         const fetchedData = res.data.data;
-        // Deep merge fetched data with defaults to ensure all keys exist
-        setSettingsData(prev => ({
-          ...prev,
-          settings: { ...prev.settings, ...(fetchedData.settings || {}) },
-          branding: { ...prev.branding, ...(fetchedData.branding || {}) },
-          defaultCurrency: fetchedData.defaultCurrency || prev.defaultCurrency,
-          defaultLocale: fetchedData.defaultLocale || prev.defaultLocale,
-          timezone: fetchedData.timezone || prev.timezone
-        }));
+        setSettingsData(prev => {
+          // Deep merge: DB values win, but fall back to defaults for any missing keys
+          const mergeNested = (defaults, fromDb) => {
+            if (!fromDb || typeof fromDb !== 'object') return defaults;
+            const merged = { ...defaults };
+            Object.keys(fromDb).forEach(key => {
+              if (fromDb[key] !== null && typeof fromDb[key] === 'object' && !Array.isArray(fromDb[key])) {
+                merged[key] = mergeNested(defaults[key] || {}, fromDb[key]);
+              } else if (fromDb[key] !== undefined && fromDb[key] !== null) {
+                merged[key] = fromDb[key];
+              }
+            });
+            return merged;
+          };
+          return {
+            ...prev,
+            settings: mergeNested(prev.settings, fetchedData.settings),
+            branding: mergeNested(prev.branding, fetchedData.branding),
+            defaultCurrency: fetchedData.defaultCurrency ?? prev.defaultCurrency,
+            defaultLocale: fetchedData.defaultLocale ?? prev.defaultLocale,
+            timezone: fetchedData.timezone ?? prev.timezone,
+          };
+        });
       }
     } catch (error) {
       console.error(error);
@@ -72,6 +120,8 @@ export default function SettingsPage() {
     try {
       await api.put('/settings', settingsData);
       toast.success("Settings saved successfully");
+      // Reload from server to confirm the saved values
+      await fetchSettings();
     } catch (error) {
       toast.error("Failed to save settings");
     } finally {
@@ -118,36 +168,6 @@ export default function SettingsPage() {
     { id: "notifications", label: "Notifications", icon: Bell },
   ];
 
-  const InputField = ({ label, value, onChange, placeholder, type = "text" }) => (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{label}</label>
-      <input 
-        type={type}
-        value={value || ""}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        disabled={!isAdmin()}
-        className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all text-gray-900 dark:text-white disabled:opacity-60"
-      />
-    </div>
-  );
-
-  const ToggleSwitch = ({ label, checked, onChange, description }) => (
-    <div className="flex items-start space-x-3 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800">
-      <div className="flex-1">
-        <label className="text-sm font-semibold text-gray-900 dark:text-white block">{label}</label>
-        {description && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{description}</p>}
-      </div>
-      <button 
-        type="button"
-        disabled={!isAdmin()}
-        onClick={() => onChange(!checked)}
-        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${checked ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'} disabled:opacity-50`}
-      >
-        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${checked ? 'translate-x-6' : 'translate-x-1'}`} />
-      </button>
-    </div>
-  );
 
   if (loading) {
     return (
@@ -216,17 +236,17 @@ export default function SettingsPage() {
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-100 dark:border-gray-700/50">
-                  <InputField label="Laboratory Name" value={settingsData.settings.lab?.name} onChange={v => updateSetting('lab', 'name', v)} placeholder="e.g. Apex Diagnostics" />
-                  <InputField label="License Number" value={settingsData.settings.lab?.license} onChange={v => updateSetting('lab', 'license', v)} placeholder="e.g. LAB-12345" />
+                  <InputField disabled={!isAdmin()} label="Laboratory Name" value={settingsData.settings.lab?.name} onChange={v => updateSetting('lab', 'name', v)} placeholder="e.g. Apex Diagnostics" />
+                  <InputField disabled={!isAdmin()} label="License Number" value={settingsData.settings.lab?.license} onChange={v => updateSetting('lab', 'license', v)} placeholder="e.g. LAB-12345" />
                   <div className="md:col-span-2">
-                    <InputField label="Address Line" value={settingsData.settings.lab?.address} onChange={v => updateSetting('lab', 'address', v)} placeholder="Street address" />
+                    <InputField disabled={!isAdmin()} label="Address Line" value={settingsData.settings.lab?.address} onChange={v => updateSetting('lab', 'address', v)} placeholder="Street address" />
                   </div>
-                  <InputField label="City" value={settingsData.settings.lab?.city} onChange={v => updateSetting('lab', 'city', v)} placeholder="City" />
-                  <InputField label="State / Region" value={settingsData.settings.lab?.state} onChange={v => updateSetting('lab', 'state', v)} placeholder="State" />
-                  <InputField label="ZIP / Postal Code" value={settingsData.settings.lab?.zip} onChange={v => updateSetting('lab', 'zip', v)} placeholder="ZIP code" />
-                  <InputField label="Country" value={settingsData.settings.lab?.country} onChange={v => updateSetting('lab', 'country', v)} placeholder="Country" />
-                  <InputField label="Phone Number" value={settingsData.settings.lab?.phone} onChange={v => updateSetting('lab', 'phone', v)} placeholder="Contact number" type="tel" />
-                  <InputField label="Email Address" value={settingsData.settings.lab?.email} onChange={v => updateSetting('lab', 'email', v)} placeholder="Official email" type="email" />
+                  <InputField disabled={!isAdmin()} label="City" value={settingsData.settings.lab?.city} onChange={v => updateSetting('lab', 'city', v)} placeholder="City" />
+                  <InputField disabled={!isAdmin()} label="State / Region" value={settingsData.settings.lab?.state} onChange={v => updateSetting('lab', 'state', v)} placeholder="State" />
+                  <InputField disabled={!isAdmin()} label="ZIP / Postal Code" value={settingsData.settings.lab?.zip} onChange={v => updateSetting('lab', 'zip', v)} placeholder="ZIP code" />
+                  <InputField disabled={!isAdmin()} label="Country" value={settingsData.settings.lab?.country} onChange={v => updateSetting('lab', 'country', v)} placeholder="Country" />
+                  <InputField disabled={!isAdmin()} label="Phone Number" value={settingsData.settings.lab?.phone} onChange={v => updateSetting('lab', 'phone', v)} placeholder="Contact number" type="tel" />
+                  <InputField disabled={!isAdmin()} label="Email Address" value={settingsData.settings.lab?.email} onChange={v => updateSetting('lab', 'email', v)} placeholder="Official email" type="email" />
                 </div>
               </div>
             )}
@@ -294,7 +314,7 @@ export default function SettingsPage() {
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-100 dark:border-gray-700/50">
-                  <InputField label="Brand Name" value={settingsData.branding?.companyName} onChange={v => updateBranding('companyName', v)} placeholder="e.g. Apex Diagnostics" />
+                  <InputField disabled={!isAdmin()} label="Brand Name" value={settingsData.branding?.companyName} onChange={v => updateBranding('companyName', v)} placeholder="e.g. Apex Diagnostics" />
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Primary Brand Color</label>
@@ -317,7 +337,7 @@ export default function SettingsPage() {
                   </div>
 
                   <div className="md:col-span-2">
-                    <InputField label="Logo Image URL" value={settingsData.branding?.logoUrl} onChange={v => updateBranding('logoUrl', v)} placeholder="https://..." type="url" />
+                    <InputField disabled={!isAdmin()} label="Logo Image URL" value={settingsData.branding?.logoUrl} onChange={v => updateBranding('logoUrl', v)} placeholder="https://..." type="url" />
                     {settingsData.branding?.logoUrl && (
                       <div className="mt-4 p-4 border border-dashed border-gray-300 dark:border-gray-600 rounded-xl inline-block bg-gray-50 dark:bg-gray-800/50">
                         <img src={settingsData.branding.logoUrl} alt="Logo Preview" className="max-h-16 object-contain" onError={(e) => e.target.style.display='none'} />
@@ -344,9 +364,12 @@ export default function SettingsPage() {
                         <input 
                           type="number" 
                           min="1"
-                          value={settingsData.settings.tat?.[dept] || ""} 
+                          value={settingsData.settings.tat?.[dept] ?? ""} 
                           disabled={!isAdmin()} 
-                          onChange={(e) => updateSetting('tat', dept, parseInt(e.target.value) || 0)}
+                          onChange={(e) => {
+                            const parsed = parseInt(e.target.value, 10);
+                            updateSetting('tat', dept, isNaN(parsed) ? '' : parsed);
+                          }}
                           className="w-20 px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white text-center focus:ring-2 focus:ring-blue-500/40" 
                         />
                         <span className="text-xs text-gray-500">hrs</span>
@@ -366,11 +389,33 @@ export default function SettingsPage() {
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-100 dark:border-gray-700/50">
-                  <InputField label="Session Timeout (Minutes)" value={settingsData.settings.security?.sessionTimeout} onChange={v => updateSetting('security', 'sessionTimeout', parseInt(v))} type="number" />
-                  <InputField label="Max Login Attempts (Lockout)" value={settingsData.settings.security?.maxLoginAttempts} onChange={v => updateSetting('security', 'maxLoginAttempts', parseInt(v))} type="number" />
+                  <InputField 
+                    disabled={!isAdmin()} 
+                    label="Session Timeout (Minutes)" 
+                    value={settingsData.settings.security?.sessionTimeout}
+                    onChange={v => {
+                      const parsed = parseInt(v, 10);
+                      updateSetting('security', 'sessionTimeout', isNaN(parsed) ? '' : parsed);
+                    }}
+                    type="number"
+                    min="1"
+                    max="1440"
+                  />
+                  <InputField 
+                    disabled={!isAdmin()} 
+                    label="Max Login Attempts (Lockout)" 
+                    value={settingsData.settings.security?.maxLoginAttempts}
+                    onChange={v => {
+                      const parsed = parseInt(v, 10);
+                      updateSetting('security', 'maxLoginAttempts', isNaN(parsed) ? '' : parsed);
+                    }}
+                    type="number"
+                    min="1"
+                    max="20"
+                  />
                   
                   <div className="md:col-span-2 space-y-4">
-                    <ToggleSwitch 
+                    <ToggleSwitch disabled={!isAdmin()} 
                       label="Require Two-Factor Authentication (2FA)" 
                       description="Force all users in this tenant to configure 2FA upon their next login."
                       checked={settingsData.settings.security?.require2FA} 
@@ -390,25 +435,25 @@ export default function SettingsPage() {
                 </div>
                 
                 <div className="grid grid-cols-1 gap-4 pt-4 border-t border-gray-100 dark:border-gray-700/50">
-                  <ToggleSwitch 
+                  <ToggleSwitch disabled={!isAdmin()} 
                     label="Enable Email Notifications" 
                     description="Send email alerts to patients and doctors when reports are finalized."
                     checked={settingsData.settings.notifications?.emailEnabled} 
                     onChange={v => updateSetting('notifications', 'emailEnabled', v)} 
                   />
-                  <ToggleSwitch 
+                  <ToggleSwitch disabled={!isAdmin()} 
                     label="Enable SMS Notifications" 
                     description="Send SMS text messages using the integrated gateway."
                     checked={settingsData.settings.notifications?.smsEnabled} 
                     onChange={v => updateSetting('notifications', 'smsEnabled', v)} 
                   />
-                  <ToggleSwitch 
+                  <ToggleSwitch disabled={!isAdmin()} 
                     label="Critical Value Alerts" 
                     description="Immediately notify pathologists and referring doctors for critical panic values."
                     checked={settingsData.settings.notifications?.criticalAlerts} 
                     onChange={v => updateSetting('notifications', 'criticalAlerts', v)} 
                   />
-                  <ToggleSwitch 
+                  <ToggleSwitch disabled={!isAdmin()} 
                     label="TAT Breach Warnings" 
                     description="Alert department heads when a test approaches or breaches Turnaround Time."
                     checked={settingsData.settings.notifications?.tatBreach} 

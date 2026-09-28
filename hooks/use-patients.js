@@ -56,3 +56,51 @@ export function usePatientDelete() {
   });
 }
 
+// ----------------------------------------------------
+// EPIC EXTENSIONS: History, Alerts, Flags, Merge
+// ----------------------------------------------------
+
+export function usePatientHistory(id) {
+  return useQuery({
+    queryKey: ['patients', id, 'history'],
+    queryFn: () => patientApi.getHistory(id).then(r => r.data),
+    enabled: !!id,
+  });
+}
+
+export function usePatientMerge() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, targetPatientId }) => 
+      patientApi.merge(id, { targetPatientId }).then(r => r.data),
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: ['patients'] });
+      qc.invalidateQueries({ queryKey: ['patients', variables.id] });
+    },
+  });
+}
+
+export function useCreatePatientAlert() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }) => 
+      patientApi.addAlert(id, data).then(r => r.data),
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: ['patients', variables.id] });
+      qc.invalidateQueries({ queryKey: ['patients', variables.id, 'history'] });
+    },
+  });
+}
+
+export function useCreatePatientFlag() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }) => 
+      patientApi.addFlag(id, data).then(r => r.data),
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: ['patients', variables.id] });
+      qc.invalidateQueries({ queryKey: ['patients', variables.id, 'history'] });
+    },
+  });
+}
+

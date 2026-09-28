@@ -29,13 +29,13 @@ export default function NotificationsPage() {
   const [page, setPage] = useState(1);
   const limit = 20;
 
-    const { user } = useAuthStore();
-  
+  const { user } = useAuthStore();
+
   // Fetch notifications with filters
-  const { 
-    data: notificationsData, 
-    isLoading, 
-    refetch: refetchNotifications 
+  const {
+    data: notificationsData,
+    isLoading,
+    refetch: refetchNotifications
   } = useNotifications({
     limit,
     offset: (page - 1) * limit,
@@ -43,9 +43,9 @@ export default function NotificationsPage() {
   });
 
   // Fetch counts for header
-  const { 
-    data: countsData, 
-    refetch: refetchCounts 
+  const {
+    data: countsData,
+    refetch: refetchCounts
   } = useNotificationCounts();
 
   const markAsRead = useMarkNotificationAsRead();
@@ -80,7 +80,7 @@ export default function NotificationsPage() {
       refetchCounts();
     } catch (error) {
       console.error('Failed to mark all as read:', error);
-    } 
+    }
   }, [markAllAsRead, refetchNotifications, refetchCounts]);
 
   const handleDelete = useCallback(async (id) => {
@@ -88,7 +88,7 @@ export default function NotificationsPage() {
       await deleteNotification.mutateAsync(id);
       refetchNotifications();
       refetchCounts();
-    } catch (error) {  
+    } catch (error) {
       console.error('Failed to delete notification:', error);
     }
   }, [deleteNotification, refetchNotifications, refetchCounts]);
@@ -111,14 +111,14 @@ export default function NotificationsPage() {
 
   const getIcon = useCallback((type) => {
     switch (type?.toLowerCase()) {
-      case 'success': 
+      case 'success':
         return <CheckCircle className="w-5 h-5 text-green-500" />;
-      case 'error': 
+      case 'error':
         return <XCircle className="w-5 h-5 text-red-500" />;
       case 'warning':
       case 'alert':
         return <AlertTriangle className="w-5 h-5 text-amber-500" />;
-      default: 
+      default:
         return <Info className="w-5 h-5 text-blue-500" />;
     }
   }, []);
@@ -155,25 +155,29 @@ export default function NotificationsPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          {/* Left: Back + Title */}
+          <div className="flex items-center gap-3">
             <Link
               href="/dashboard"
-              className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-800 transition"
+              className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-800 transition shrink-0"
             >
               <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </Link>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white leading-tight">
                 Notifications
               </h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                {unreadCount} unread · {total} total · Stay updated with your latest activities
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                {unreadCount} unread · {total} total
+                <span className="hidden sm:inline"> · Stay updated with your latest activities</span>
               </p>
             </div>
           </div>
 
-          <div className="flex gap-2">
+          {/* Right: Action buttons */}
+          <div className="flex items-center gap-2 self-end sm:self-auto">
             <button
               onClick={handleRefresh}
               className="p-2 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
@@ -181,54 +185,47 @@ export default function NotificationsPage() {
             >
               <RefreshCw className="w-4 h-4 text-gray-600 dark:text-gray-400" />
             </button>
-            
+
             {unreadCount > 0 && (
               <button
                 onClick={handleMarkAllAsRead}
                 disabled={markAllAsRead.isPending}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition disabled:opacity-50"
+                className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition disabled:opacity-50"
               >
                 {markAllAsRead.isPending ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  <CheckCheck className="w-4 h-4" />
+                  <CheckCheck className="w-4 h-4 shrink-0" />
                 )}
-                Mark all as read ({unreadCount})
+                {/* On mobile: icon only. On sm+: full label */}
+                <span className="hidden sm:inline">Mark all as read ({unreadCount})</span>
+                <span className="sm:hidden">({unreadCount})</span>
               </button>
             )}
           </div>
         </div>
 
         {/* Filters */}
-        <div className="flex gap-2 mb-6">
+        <div className="flex flex-wrap gap-2 mb-6">
           <button
-            onClick={() => {
-              setFilter('all');
-              setPage(1);
-            }}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-              filter === 'all'
+            onClick={() => { setFilter('all'); setPage(1); }}
+            className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition ${filter === 'all'
                 ? 'bg-blue-600 text-white shadow-md'
                 : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700'
-            }`}
+              }`}
           >
             All ({total})
           </button>
           <button
-            onClick={() => {
-              setFilter('unread');
-              setPage(1);
-            }}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-              filter === 'unread'
+            onClick={() => { setFilter('unread'); setPage(1); }}
+            className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition ${filter === 'unread'
                 ? 'bg-blue-600 text-white shadow-md'
                 : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700'
-            }`}
+              }`}
           >
             Unread ({unreadCount})
           </button>
         </div>
-
         {/* Notifications List */}
         <div className="space-y-3">
           {isLoading ? (
@@ -251,13 +248,12 @@ export default function NotificationsPage() {
             notifications.map((notif) => (
               <div
                 key={notif.id}
-                className={`bg-white dark:bg-gray-900 rounded-xl shadow-sm border transition-all hover:shadow-md ${
-                  isUnseen(notif)
+                className={`bg-white dark:bg-gray-900 rounded-xl shadow-sm border transition-all hover:shadow-md ${isUnseen(notif)
                     ? 'border-l-4 border-l-blue-600 dark:border-l-blue-500 bg-blue-50/30 dark:bg-blue-900/10'
                     : isSeenButUnread(notif)
-                    ? 'border-gray-200 dark:border-gray-800 opacity-75'
-                    : 'border-gray-200 dark:border-gray-800'
-                }`}
+                      ? 'border-gray-200 dark:border-gray-800 opacity-75'
+                      : 'border-gray-200 dark:border-gray-800'
+                  }`}
               >
                 <div className="p-4">
                   <div className="flex gap-4">
@@ -267,35 +263,33 @@ export default function NotificationsPage() {
                         {getIcon(notif.type)}
                       </div>
                     </div>
-                    
+
                     {/* Content */}
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap justify-between items-start gap-2">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className={`font-semibold ${
-                              isUnseen(notif)
+                            <h3 className={`font-semibold ${isUnseen(notif)
                                 ? 'text-gray-900 dark:text-white'
                                 : 'text-gray-600 dark:text-gray-400'
-                            }`}>
+                              }`}>
                               {notif.title}
                             </h3>
                             <span className={`text-xs px-2 py-0.5 rounded-full ${getPriorityColor(notif.priority)}`}>
                               {notif.priority || 'normal'}
                             </span>
                           </div>
-                          <p className={`text-sm mt-1 ${
-                            isUnseen(notif)
+                          <p className={`text-sm mt-1 ${isUnseen(notif)
                               ? 'text-gray-600 dark:text-gray-400'
                               : 'text-gray-500 dark:text-gray-500'
-                          }`}>
+                            }`}>
                             {notif.message}
                           </p>
                           <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
                             {formatTime(notif.created_at)}
                           </p>
                         </div>
-                        
+
                         {/* Actions */}
                         <div className="flex gap-1">
                           {notif.status !== 'read' && (
@@ -326,7 +320,7 @@ export default function NotificationsPage() {
                           </button>
                         </div>
                       </div>
-                      
+
                       {/* Action Link */}
                       {notif.action_url && (
                         <Link
@@ -372,16 +366,15 @@ export default function NotificationsPage() {
                 } else {
                   pageNum = page - 2 + i;
                 }
-                
+
                 return (
                   <button
                     key={pageNum}
                     onClick={() => setPage(pageNum)}
-                    className={`w-10 h-10 rounded-lg font-medium transition ${
-                      page === pageNum
+                    className={`w-10 h-10 rounded-lg font-medium transition ${page === pageNum
                         ? 'bg-blue-600 text-white shadow-md'
                         : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700'
-                    }`}
+                      }`}
                   >
                     {pageNum}
                   </button>

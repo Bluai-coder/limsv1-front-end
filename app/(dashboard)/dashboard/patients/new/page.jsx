@@ -13,6 +13,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { usePermissions } from '@/hooks/permissions/usePermissions';
 import { PermissionDenied } from '@/components/PermissionGuard';
+import { bluHealthApi3rdParty } from '@/lib/api';
 
 const schema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -78,14 +79,10 @@ export default function NewPatientPage() {
       if (!patientId || isSearchingBluId) return;
 
       setIsSearchingBluId(true);
-
-      const response = await axios.get('/api/bluhealth/patientsbyid', {
-        params: { patient_id: patientId },
-      });
-
-      const p = response?.data?.data?.patients;
+      // const response = await useBluHealthPatientDataByID(patientId);
+      const response = await bluHealthApi3rdParty.getPatientById(patientId);
+      const p = response?.data?.data?.patient;
       if (!p) return;
-
       setBluHealthPatientData(p);
 
       // Format phone numbers to remove any spaces or special characters
@@ -196,7 +193,7 @@ export default function NewPatientPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4 sm:p-6 transition-colors duration-200">
       <div className="max-w-4xl mx-auto py-6">
         {/* Header */}
-          <div className="flex items-center gap-3 mb-8">
+        <div className="flex items-center gap-3 mb-8">
           {/* Back Button */}
           <Link
             href="/dashboard/patients"
