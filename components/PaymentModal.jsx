@@ -25,79 +25,23 @@ import {
 } from "@heroicons/react/24/outline";
 import { api } from "@/lib/api";
 
-// Comprehensive payment methods configuration
+// Only Cash and Razorpay supported
 const paymentMethods = [
   { 
-    id: "card", 
-    label: "Card", 
-    icon: "💳", 
-    color: "blue",
-    description: "Credit/Debit Card",
-    category: "digital"
-  },
-  { 
-    id: "upi", 
-    label: "UPI", 
-    icon: "📱", 
-    color: "green",
-    description: "Google Pay, PhonePe, etc.",
-    category: "digital"
-  },
-  { 
-    id: "net_banking", 
-    label: "Net Banking", 
-    icon: "🏦", 
-    color: "purple",
-    description: "All major banks",
-    category: "digital"
-  },
-  { 
-    id: "paypal", 
-    label: "PayPal", 
-    icon: "💰", 
-    color: "indigo",
-    description: "International payments",
-    category: "digital"
+    id: "cash", 
+    label: "Cash", 
+    icon: "💵", 
+    color: "amber",
+    description: "Pay at counter",
+    category: "offline"
   },
   { 
     id: "razorpay", 
     label: "Razorpay", 
     icon: "⚡", 
     color: "cyan",
-    description: "Quick & secure",
+    description: "Cards, UPI, NetBanking & Wallets",
     category: "digital"
-  },
-  { 
-    id: "cash", 
-    label: "Cash", 
-    icon: "💵", 
-    color: "amber",
-    description: "Pay in person",
-    category: "offline"
-  },
-  { 
-    id: "cheque", 
-    label: "Cheque", 
-    icon: "📝", 
-    color: "teal",
-    description: "Bank cheque",
-    category: "offline"
-  },
-  { 
-    id: "insurance", 
-    label: "Insurance", 
-    icon: "🛡️", 
-    color: "rose",
-    description: "Insurance claim",
-    category: "offline"
-  },
-  { 
-    id: "corporate", 
-    label: "Corporate", 
-    icon: "🏢", 
-    color: "slate",
-    description: "Corporate billing",
-    category: "offline"
   },
 ];
 
@@ -142,7 +86,7 @@ export default function PaymentModal({
   const [invoice, setInvoice] = useState(null);
   const [loading, setLoading] = useState(false);
   const [processing, setProcessing] = useState(false);
-  const [selectedMethod, setSelectedMethod] = useState("card");
+  const [selectedMethod, setSelectedMethod] = useState("cash");
   const [amount, setAmount] = useState(0);
   const [upiId, setUpiId] = useState("");
   const [upiQRCode, setUpiQRCode] = useState(null);
@@ -494,7 +438,7 @@ export default function PaymentModal({
           order_id: response.data.data.orderId,
           handler: async function (response) {
             try {
-              const verifyResponse = await api.post("/razorpay/verify", {
+              const verifyResponse = await api.post("/invoices/razorpay/verify", {
                 orderId: response.razorpay_order_id,
                 paymentId: response.razorpay_payment_id,
                 signature: response.razorpay_signature,
@@ -677,40 +621,11 @@ export default function PaymentModal({
     }
     
     switch (selectedMethod) {
-      case "card":
-        if (!cardDetails.number || !cardDetails.expiry || !cardDetails.cvv) {
-          setError("Please fill all card details");
-          return;
-        }
-        handleCardPayment();
-        break;
-      case "paypal":
-        handlePayPalPayment();
-        break;
       case "razorpay":
         handleRazorpayPayment();
         break;
-      case "upi":
-        if (!upiId) {
-          setError("Please enter UPI ID");
-          return;
-        }
-        handleUPIPayment();
-        break;
-      case "net_banking":
-        handleNetBankingPayment();
-        break;
       case "cash":
         handleCashPayment();
-        break;
-      case "cheque":
-        handleChequePayment();
-        break;
-      case "insurance":
-        handleInsurancePayment();
-        break;
-      case "corporate":
-        handleCorporatePayment();
         break;
       default:
         setError("Please select a payment method");
@@ -886,63 +801,36 @@ export default function PaymentModal({
 
     return (
       <>
-        {/* Category Filter */}
-        <div className="flex gap-2 mb-4">
-          <button
-            onClick={() => setPaymentMethodCategory("all")}
-            className={`px-3 py-1.5 text-xs rounded-full transition ${
-              paymentMethodCategory === "all"
-                ? "bg-indigo-600 text-white"
-                : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-            }`}
-          >
-            All
-          </button>
-          <button
-            onClick={() => setPaymentMethodCategory("digital")}
-            className={`px-3 py-1.5 text-xs rounded-full transition ${
-              paymentMethodCategory === "digital"
-                ? "bg-indigo-600 text-white"
-                : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-            }`}
-          >
-            Digital
-          </button>
-          <button
-            onClick={() => setPaymentMethodCategory("offline")}
-            className={`px-3 py-1.5 text-xs rounded-full transition ${
-              paymentMethodCategory === "offline"
-                ? "bg-indigo-600 text-white"
-                : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-            }`}
-          >
-            Offline
-          </button>
-        </div>
-
-        {/* Payment Methods Grid */}
-        <div className="grid grid-cols-3 gap-2 mb-6">
-          {getFilteredMethods().map((method) => (
-            <button
-              key={method.id}
-              onClick={() => {
-                setSelectedMethod(method.id);
-                setShowQR(false);
-                setError(null);
-                setConversionInfo(null);
-                setShowConversionConfirm(false);
-                setPaypalResponseData(null);
-              }}
-              className={`p-3 border-2 rounded-xl text-center transition-all ${
-                selectedMethod === method.id
-                  ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 shadow-md"
-                  : "border-gray-200 dark:border-gray-600 hover:border-indigo-300 dark:hover:border-indigo-500 hover:bg-gray-50 dark:hover:bg-gray-700"
-              }`}
-            >
-              <div className="text-2xl">{method.icon}</div>
-              <div className="text-xs font-medium mt-1 text-gray-700 dark:text-gray-300">{method.label}</div>
-            </button>
-          ))}
+        {/* Payment Methods Selection (Cash & Razorpay Only) */}
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          {paymentMethods.map((method) => {
+            const isSelected = selectedMethod === method.id;
+            return (
+              <button
+                key={method.id}
+                type="button"
+                onClick={() => {
+                  setSelectedMethod(method.id);
+                  setError(null);
+                }}
+                className={`p-3.5 border-2 rounded-xl text-left transition-all flex items-center gap-3 ${
+                  isSelected
+                    ? "border-indigo-600 bg-indigo-50 dark:bg-indigo-950/40 shadow-sm"
+                    : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 bg-white dark:bg-gray-800"
+                }`}
+              >
+                <div className="text-3xl flex-shrink-0">{method.icon}</div>
+                <div>
+                  <div className={`text-sm font-bold ${isSelected ? "text-indigo-900 dark:text-indigo-200" : "text-gray-900 dark:text-white"}`}>
+                    {method.label}
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    {method.description}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
         </div>
 
         {/* Error Message */}

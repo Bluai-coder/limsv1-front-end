@@ -14,7 +14,7 @@ import TestDetailsModal from '@/components/detail-popup/TestDetailsModal';
 import { useReferringPhysician } from '@/hooks/use-referring-physician';
 import { usePermissions } from '@/hooks/permissions/usePermissions';
 import { PermissionDenied } from '@/components/PermissionGuard';
-import PaymentModal from "@/components/PaymentModal";
+import OrderBillingModal from "@/components/OrderBillingModal";
 
 
 export default function NewOrderPage() {
@@ -162,17 +162,22 @@ export default function NewOrderPage() {
   };
 
 
-  const handleSubmit = async () => {
+  const [showBillingModal, setShowBillingModal] = useState(false);
+  const [createdOrderResult, setCreatedOrderResult] = useState(null);
+
+  const handleOpenBilling = () => {
     if (!selectedPatient) {
-      toast.error('Please select a patient');
+      toast.error('Please select a patient first');
       return;
     }
     if (selectedTests.length === 0) {
-      toast.error('Please select at least one test');
+      toast.error('Please select at least one test or package');
       return;
     }
+    setShowBillingModal(true);
+  };
 
-
+  const handleConfirmBillingOrder = async ({ billing, payment }) => {
     try {
       const order = await createOrder.mutateAsync({
         user_Id: user?.id,
@@ -180,17 +185,42 @@ export default function NewOrderPage() {
         referring_physician_id: selectedPhysician?.id || null,
         order_type: "cp",
         priority,
+        clinical_info: clinicalInfo || undefined,
         clinicalInfo: clinicalInfo || undefined,
+        order: {
+          priority,
+          order_type: "cp",
+          clinical_info: clinicalInfo || undefined,
+        },
         tests: selectedTests.map((t) => ({
           id: t.id,
-          type: "test"
+          type: "test",
+          price: t.price || 0,
         })),
+        billing,
+        payment,
       });
-      toast.success(`Order created successfully`);
-      router.push('/dashboard/orders');
+
+      let resData = order;
+      while (resData && resData.data && !resData.order_number) {
+        resData = resData.data;
+      }
+      setCreatedOrderResult(resData);
+      toast.success(`Order #${resData?.order_number || ''} & Invoice created successfully!`);
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to create order');
+      toast.error(err.response?.data?.message || err.message || 'Failed to create order');
     }
+  };
+
+  const handleResetOrder = () => {
+    setSelectedPatient(null);
+    setSelectedPhysician(null);
+    setSelectedTests([]);
+    setSelectedPackages([]);
+    setClinicalInfo('');
+    setPriority('routine');
+    setCreatedOrderResult(null);
+    setShowBillingModal(false);
   };
 
   return (
@@ -618,12 +648,12 @@ export default function NewOrderPage() {
 
               {/* Submit */}
               <button
-                onClick={handleSubmit}
+                onClick={handleOpenBilling}
                 disabled={createOrder.isPending || !selectedPatient || selectedTests.length === 0}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#1b4dff] hover:bg-[#1b4dff] dark:bg-[#1b4dff] dark:hover:bg-[#1a40e0] text-white rounded-lg font-medium focus-ring disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#1b4dff] hover:bg-[#153ecc] text-white rounded-xl font-bold shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
-                {createOrder.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                {createOrder.isPending ? 'Creating...' : 'Create Order'}
+                <Save className="w-4 h-4" />
+                Proceed to Billing & Pay ({formatCurrency(totalPrice)})
               </button>
             </div>
           </div>
@@ -634,6 +664,28 @@ export default function NewOrderPage() {
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           test={selectedTest}
+        />
+
+        {/* Upfront Order Billing & Payment Modal (Paywall) */}
+        <OrderBillingModal
+          isOpen={showBillingModal}
+          onClose={() => {
+            if (!createOrder.isPending) {
+              setShowBillingModal(false);
+              setCreatedOrderResult(null);
+            }
+          }}
+          patient={selectedPatient}
+          physician={selectedPhysician}
+          tests={selectedTests}
+          subtotal={totalPrice}
+          currency="INR"
+          priority={priority}
+          onConfirmOrder={handleConfirmBillingOrder}
+          isSubmitting={createOrder.isPending}
+          createdOrderResult={createdOrderResult}
+          onResetOrder={handleResetOrder}
+          onViewOrders={() => router.push('/dashboard/orders')}
         />
      
       </div>

@@ -14,6 +14,7 @@ import {
   Trash2,
   Eye,
   ListRestartIcon,
+  Receipt,
 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
@@ -293,6 +294,7 @@ export default function OrdersPage() {
                 <th className="px-6 py-4 text-left font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Tests</th>
                 <th className="px-6 py-4 text-left font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Priority</th>
                 <th className="px-6 py-4 text-left font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Status</th>
+                <th className="px-6 py-4 text-left font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Invoice & Payment</th>
                 <th className="px-6 py-4 text-left font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Ordered At</th>
                 {(canUpdate('Orders') || canDelete('Orders')) && (
                   <th className="px-6 py-4 text-center font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Actions</th>
@@ -303,7 +305,7 @@ export default function OrdersPage() {
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
-                  <TableSkeleton key={i} columns={8} />
+                  <TableSkeleton key={i} columns={9} />
                 ))
               ) : orders.length > 0 ? (
                 orders.map((order) => (
@@ -362,6 +364,37 @@ export default function OrdersPage() {
                       </span>
                     </td>
 
+                    {/* Invoice & Payment */}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {order.invoice ? (
+                        <div className="flex flex-col gap-1">
+                          <Link
+                            href={`/dashboard/invoices/${order.invoice.id}`}
+                            className="font-mono text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                          >
+                            <Receipt className="w-3.5 h-3.5" />
+                            {order.invoice.invoice_number}
+                          </Link>
+                          <div className="flex items-center gap-1.5">
+                            <span className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded-full uppercase tracking-wider ${
+                              order.invoice.status === 'paid'
+                                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                                : order.invoice.status === 'partially_paid'
+                                ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                                : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                            }`}>
+                              {order.invoice.status === 'paid' ? 'Paid' : order.invoice.status === 'partially_paid' ? 'Partial' : 'Unpaid'}
+                            </span>
+                            <span className="text-xs text-gray-700 dark:text-gray-300 font-semibold">
+                              ₹{Number(order.invoice.total_amount || 0).toLocaleString('en-IN')}
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-400 dark:text-gray-500 italic">No invoice</span>
+                      )}
+                    </td>
+
                     {/* Ordered At */}
                     <td className="px-6 py-4 text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">
                       {order.ordered_at ? new Date(order.ordered_at).toLocaleString('en-IN') : '—'}
@@ -408,7 +441,7 @@ export default function OrdersPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={8} className="py-20 text-center">
+                  <td colSpan={9} className="py-20 text-center">
                     <ClipboardList className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
                     <p className="text-gray-400 dark:text-gray-500 font-medium">No orders found</p>
                     {/* {canCreate('Orders') && (

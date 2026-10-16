@@ -24,6 +24,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/lib/auth-store';
 import { useCreateOrderForBluHealth } from '@/hooks/use-orders';
+import { bluHealthApi3rdParty } from '@/lib/api';
 
 // Status badge component
 const StatusBadge = ({ status }) => {
@@ -474,21 +475,10 @@ export default function LabRecommendations() {
         try {
             setLoading(true);
             setError(null);
+            const response = await bluHealthApi3rdParty.getLabRecommendations(hospitalId, tenant.id);
 
-            const endpoint = `${process.env.NEXT_PUBLIC_API_FORBLUHEALTH}/api/bluhealth/lab-recommendations/hospital/${hospitalId}/lab/${tenant.id}?page=${page}&limit=10`;
-
-            const response = await fetch(endpoint, {
-                method: 'GET',
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const apiResponse = await response.json();
-
-            if (apiResponse?.success && apiResponse?.data) {
-                const data = apiResponse.data;
+            if (response?.data.data.success) {
+                const data = response?.data.data.data;
 
                 // Create hospital data with proper mapping 
                 const hospitalData = {

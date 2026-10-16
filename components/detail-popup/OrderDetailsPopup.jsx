@@ -593,7 +593,8 @@ import {
   Stethoscope,
   Building,
   GraduationCap,
-  CreditCard
+  CreditCard,
+  Receipt
 } from 'lucide-react';
 
 const getStatusBadge = (status) => {
@@ -769,6 +770,7 @@ export default function OrderDetailsPopup({ order, isOpen, onClose, onViewSpecim
           <div className="flex gap-1 overflow-x-auto">
             {[
               { id: 'details', label: 'Details', icon: FileText },
+              { id: 'billing', label: 'Invoice & Payment', icon: Receipt },
               { id: 'specimens', label: 'Specimens', icon: TestTube, count: specimens?.length || 0 },
               { id: 'tests', label: 'Tests', icon: Activity, count: tests?.length || 0 },
               { id: 'timeline', label: 'Timeline', icon: Calendar },
@@ -978,6 +980,119 @@ export default function OrderDetailsPopup({ order, isOpen, onClose, onViewSpecim
                     Clinical Information
                   </h3>
                   <p className="text-sm text-amber-800 dark:text-amber-300">{order.clinical_info}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Invoice & Billing Tab */}
+          {activeTab === 'billing' && (
+            <div className="space-y-4">
+              {order.invoice ? (
+                <div className="space-y-4">
+                  {/* Invoice Header Card */}
+                  <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-2xl border border-blue-100 dark:border-blue-900/40">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div>
+                        <div className="text-xs text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wider">
+                          Invoice Number
+                        </div>
+                        <div className="text-xl font-mono font-extrabold text-gray-900 dark:text-white">
+                          {order.invoice.invoice_number}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                          Date: {formatDate(order.invoice.invoice_date || order.created_at)}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col sm:items-end gap-1.5">
+                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                          order.invoice.status === 'paid'
+                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                            : order.invoice.status === 'partially_paid'
+                            ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                            : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                        }`}>
+                          {order.invoice.status?.replace('_', ' ')}
+                        </span>
+                        <div className="text-lg font-extrabold text-[#1b4dff] dark:text-blue-400">
+                          ₹{Number(order.invoice.total_amount || 0).toLocaleString('en-IN')}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Financial Breakdown */}
+                  <div className="bg-gray-50 dark:bg-gray-900/40 rounded-2xl p-4 border border-gray-200/60 dark:border-gray-700 space-y-2 text-sm">
+                    <div className="flex justify-between text-gray-600 dark:text-gray-400">
+                      <span>Subtotal</span>
+                      <span className="font-medium text-gray-900 dark:text-white">
+                        ₹{Number(order.invoice.subtotal || 0).toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                    {Number(order.invoice.discount_amount) > 0 && (
+                      <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
+                        <span>Discount</span>
+                        <span>-₹{Number(order.invoice.discount_amount).toLocaleString('en-IN')}</span>
+                      </div>
+                    )}
+                    {Number(order.invoice.tax_amount) > 0 && (
+                      <div className="flex justify-between text-gray-600 dark:text-gray-400">
+                        <span>Tax / GST</span>
+                        <span>+₹{Number(order.invoice.tax_amount).toLocaleString('en-IN')}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-base font-bold text-gray-900 dark:text-white pt-2 border-t border-gray-200 dark:border-gray-700">
+                      <span>Net Total</span>
+                      <span className="text-[#1b4dff] dark:text-blue-400">
+                        ₹{Number(order.invoice.total_amount || 0).toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Payment Records */}
+                  {order.invoice.payments?.length > 0 && (
+                    <div>
+                      <h4 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                        Payment Transactions ({order.invoice.payments.length})
+                      </h4>
+                      <div className="divide-y divide-gray-100 dark:divide-gray-700/60 border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden">
+                        {order.invoice.payments.map((p, idx) => (
+                          <div key={p.id || idx} className="p-3 bg-white dark:bg-gray-800 flex items-center justify-between text-xs">
+                            <div>
+                              <span className="font-bold text-gray-900 dark:text-white uppercase mr-2">{p.method}</span>
+                              {p.reference && <span className="text-gray-500 dark:text-gray-400 font-mono">Ref: {p.reference}</span>}
+                              <div className="text-[11px] text-gray-400 mt-0.5">{formatDate(p.payment_date || p.created_at)}</div>
+                            </div>
+                            <div className="text-right">
+                              <span className="font-extrabold text-emerald-600 dark:text-emerald-400 text-sm">
+                                ₹{Number(p.amount || 0).toLocaleString('en-IN')}
+                              </span>
+                              <div className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold uppercase">{p.status}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Action Link */}
+                  <div className="pt-2">
+                    <a
+                      href={`/dashboard/invoices/${order.invoice.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full flex items-center justify-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-xl font-bold text-xs hover:bg-blue-100 dark:hover:bg-blue-900/40 transition"
+                    >
+                      <Receipt className="w-4 h-4" />
+                      Open Full Invoice & Print Receipt
+                    </a>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-12 text-center">
+                  <CreditCard className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                  <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">No invoice generated for this order yet.</p>
                 </div>
               )}
             </div>

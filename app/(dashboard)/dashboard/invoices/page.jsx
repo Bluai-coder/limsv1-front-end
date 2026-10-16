@@ -21,7 +21,10 @@ import {
   Calendar,
   DollarSign,
   FileText,
-  Filter
+  Filter,
+  ExternalLink,
+  Loader2,
+  Printer
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -73,7 +76,7 @@ const StatusBadge = ({ status }) => {
 };
 
 // View Invoice Modal Component
-const ViewInvoiceModal = ({ invoice, onClose }) => {
+const ViewInvoiceModal = ({ invoice, onClose, onDownloadPdf, onPayNow, isDownloading }) => {
   if (!invoice) return null;
 
   const formatCurrency = (amount) => {
@@ -94,23 +97,26 @@ const ViewInvoiceModal = ({ invoice, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto shadow-xl">
+    <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-2xl w-full mx-auto max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-100 dark:border-gray-700">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
               <Receipt className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{invoice.invoice_number}</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {invoice.patient?.first_name} {invoice.patient?.last_name}
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">{invoice.invoice_number}</h3>
+                <StatusBadge status={invoice.status} />
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Patient: {invoice.patient?.firstName || invoice.patient?.first_name || ""} {invoice.patient?.lastName || invoice.patient?.last_name || ""}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition text-gray-500 dark:text-gray-400"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition text-gray-500 dark:text-gray-400"
           >
             <X className="w-5 h-5" />
           </button>
@@ -118,61 +124,94 @@ const ViewInvoiceModal = ({ invoice, onClose }) => {
 
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-              <p className="text-xs text-gray-500 dark:text-gray-400">Patient</p>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">
-                {invoice.patient?.first_name} {invoice.patient?.last_name}
+            <div className="p-3.5 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Patient</p>
+              <p className="text-sm font-semibold text-gray-900 dark:text-white mt-0.5">
+                {invoice.patient?.firstName || invoice.patient?.first_name || ""} {invoice.patient?.lastName || invoice.patient?.last_name || ""}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                {invoice.patient?.email || 'No email'}
+                {invoice.patient?.mrn ? `MRN: ${invoice.patient.mrn}` : (invoice.patient?.email || 'No email')}
               </p>
             </div>
-            <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-              <p className="text-xs text-gray-500 dark:text-gray-400">Status</p>
-              <StatusBadge status={invoice.status} />
-            </div>
-            <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-              <p className="text-xs text-gray-500 dark:text-gray-400">Invoice Date</p>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">
+            <div className="p-3.5 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Invoice Date</p>
+              <p className="text-sm font-semibold text-gray-900 dark:text-white mt-0.5">
                 {formatDate(invoice.invoice_date)}
               </p>
-            </div>
-            <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-              <p className="text-xs text-gray-500 dark:text-gray-400">Due Date</p>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">
-                {formatDate(invoice.due_date)}
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Due: {formatDate(invoice.due_date)}
               </p>
             </div>
-            <div className="col-span-2 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-              <p className="text-xs text-gray-500 dark:text-gray-400">Total Amount</p>
-              <p className="text-lg font-bold text-gray-900 dark:text-white">
-                {formatCurrency(invoice.total_amount)}
-              </p>
+            <div className="col-span-2 p-3.5 bg-gray-50 dark:bg-gray-700/50 rounded-xl flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Total Billed Amount</p>
+                <p className="text-xl font-extrabold text-[#1b4dff] dark:text-blue-400 mt-0.5">
+                  {formatCurrency(invoice.total_amount)}
+                </p>
+              </div>
+              <div className="text-right text-xs text-gray-500 space-y-0.5">
+                <div>Subtotal: <span className="font-medium text-gray-700 dark:text-gray-300">{formatCurrency(invoice.subtotal || invoice.total_amount)}</span></div>
+                {Number(invoice.discount_amount) > 0 && (
+                  <div className="text-emerald-600">Discount: -{formatCurrency(invoice.discount_amount)}</div>
+                )}
+                {Number(invoice.tax_amount) > 0 && (
+                  <div>Tax: +{formatCurrency(invoice.tax_amount)}</div>
+                )}
+              </div>
             </div>
             {invoice.notes && (
-              <div className="col-span-2 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                <p className="text-xs text-gray-500 dark:text-gray-400">Notes</p>
-                <p className="text-sm text-gray-900 dark:text-white">{invoice.notes}</p>
+              <div className="col-span-2 p-3.5 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Notes</p>
+                <p className="text-sm text-gray-900 dark:text-white mt-0.5">{invoice.notes}</p>
               </div>
             )}
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 mt-6">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition"
-          >
-            Close
-          </button>
-          {invoice.status !== 'paid' && invoice.status !== 'cancelled' && (
-            <button
-              className="px-4 py-2 bg-[#1b4dff] hover:bg-[#1b4dff]/90 text-white rounded-lg transition"
+        <div className="flex flex-wrap items-center justify-between gap-3 mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/dashboard/invoices/${invoice.id}`}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 shadow-sm transition"
             >
-              <CreditCard className="w-4 h-4 inline mr-2" />
-              Pay Now
+              <ExternalLink className="w-3.5 h-3.5" />
+              Open Full Invoice & Print
+            </Link>
+
+            <button
+              onClick={() => onDownloadPdf && onDownloadPdf(invoice)}
+              disabled={isDownloading}
+              className="px-3.5 py-2 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl text-xs font-medium text-gray-700 dark:text-gray-200 inline-flex items-center gap-1.5 transition disabled:opacity-50"
+            >
+              {isDownloading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
+              ) : (
+                <FileDown className="w-3.5 h-3.5 text-blue-600" />
+              )}
+              Download PDF
             </button>
-          )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 rounded-xl text-xs font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+            >
+              Close
+            </button>
+            {invoice.status !== 'paid' && invoice.status !== 'cancelled' && onPayNow && (
+              <button
+                onClick={() => {
+                  onClose();
+                  onPayNow(invoice);
+                }}
+                className="px-4 py-2 bg-[#1b4dff] hover:bg-[#153ecc] text-white rounded-xl text-xs font-bold inline-flex items-center gap-1.5 shadow-sm transition"
+              >
+                <CreditCard className="w-3.5 h-3.5" />
+                Pay Balance
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -252,6 +291,56 @@ export default function InvoicesPage() {
     }
   };
 
+  const [downloadingId, setDownloadingId] = useState(null);
+
+  const handleDownloadInvoicePdf = async (inv) => {
+    try {
+      setDownloadingId(inv.id);
+      toast.info(`Generating PDF for ${inv.invoice_number}...`);
+      
+      try {
+        const response = await api.get(`/invoices/${inv.id}/pdf?download=true`, {
+          responseType: 'blob'
+        });
+        const blob = new Blob([response.data], { type: 'application/pdf' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `invoice_${inv.invoice_number || inv.id}.pdf`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+        toast.success(`Invoice ${inv.invoice_number} downloaded`);
+        return;
+      } catch (blobErr) {
+        console.warn("Direct blob download failed, falling back to URL:", blobErr);
+      }
+
+      const res = await api.get(`/invoices/${inv.id}/pdf`);
+      if (res.data?.downloadUrl) {
+        const fullUrl = res.data.downloadUrl.startsWith('http')
+          ? res.data.downloadUrl
+          : `${process.env.NEXT_PUBLIC_API_URL?.replace(/\/api\/v1\/?$/, '') || 'http://localhost:8000'}${res.data.downloadUrl}`;
+        const link = document.createElement('a');
+        link.href = fullUrl;
+        link.target = '_blank';
+        link.setAttribute('download', `invoice_${inv.invoice_number || inv.id}.pdf`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        toast.success(`Invoice ${inv.invoice_number} downloaded`);
+      } else {
+        toast.error('Could not generate invoice PDF');
+      }
+    } catch (err) {
+      console.error('Invoice PDF download error:', err);
+      toast.error(err.response?.data?.message || 'Failed to download invoice PDF');
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
   const handlePayNow = (invoiceId) => {
     console.log("invoiceIdinvoiceId",invoiceId)
     setSelectedInvoiceId(invoiceId.id);
@@ -297,6 +386,9 @@ export default function InvoicesPage() {
         <ViewInvoiceModal
           invoice={viewInvoice}
           onClose={() => setViewInvoice(null)}
+          onDownloadPdf={handleDownloadInvoicePdf}
+          onPayNow={handlePayNow}
+          isDownloading={downloadingId === viewInvoice?.id}
         />
       )}
 
@@ -417,28 +509,32 @@ export default function InvoicesPage() {
               ) : invoices.length > 0 ? (
                 invoices.map((invoice) => (
                   <tr key={invoice.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                    {/* INVOICE NUMBER - Clickable */}
+                    {/* INVOICE NUMBER - Clickable Link to Full Invoice */}
                     <td className="px-6 py-4">
-                      <button
-                        onClick={() => handleViewDetails(invoice)}
-                        className="font-medium text-gray-900 dark:text-white hover:text-[#1b4dff] dark:hover:text-[#1b4dff] transition text-left"
+                      <Link
+                        href={`/dashboard/invoices/${invoice.id}`}
+                        className="font-mono font-semibold text-gray-900 dark:text-white hover:text-[#1b4dff] dark:hover:text-[#1b4dff] transition inline-flex items-center gap-1 group"
+                        title="Open Full Invoice"
                       >
-                        {invoice.invoice_number}
-                      </button>
+                        <span>{invoice.invoice_number}</span>
+                        <ExternalLink className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 text-blue-500 transition-opacity" />
+                      </Link>
                     </td>
 
                     {/* PATIENT */}
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-semibold text-xs">
-                          {invoice.patient?.first_name?.[0]}{invoice.patient?.last_name?.[0]}
+                          {(invoice.patient?.firstName?.[0] || invoice.patient?.first_name?.[0] || 'P')}
+                          {(invoice.patient?.lastName?.[0] || invoice.patient?.last_name?.[0] || '')}
                         </div>
                         <div>
                           <p className="text-sm font-medium text-gray-900 dark:text-white">
-                            {invoice.patient?.first_name} {invoice.patient?.last_name}
+                            {invoice.patient?.firstName || invoice.patient?.first_name || 'Unknown'}{' '}
+                            {invoice.patient?.lastName || invoice.patient?.last_name || ''}
                           </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400">
-                            {invoice.patient?.email || 'No email'}
+                            {invoice.patient?.mrn ? `MRN: ${invoice.patient.mrn}` : (invoice.patient?.email || 'No MRN')}
                           </p>
                         </div>
                       </div>
@@ -470,13 +566,13 @@ export default function InvoicesPage() {
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-center gap-2">
                         {/* View Button */}
-                        <button
-                          onClick={() => handleViewDetails(invoice)}
+                        <Link
+                          href={`/dashboard/invoices/${invoice.id}`}
                           className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                          title="View Invoice Details"
+                          title="Open Full Invoice & Print"
                         >
                           <Eye className="w-4 h-4" />
-                        </button>
+                        </Link>
 
                         {/* Pay Button */}
                         {invoice.status !== 'paid' && invoice.status !== 'cancelled' && (
@@ -491,10 +587,16 @@ export default function InvoicesPage() {
 
                         {/* Download Button */}
                         <button
-                          className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                          onClick={() => handleDownloadInvoicePdf(invoice)}
+                          disabled={downloadingId === invoice.id}
+                          className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors disabled:opacity-50"
                           title="Download PDF"
                         >
-                          <FileDown className="w-4 h-4" />
+                          {downloadingId === invoice.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                          ) : (
+                            <FileDown className="w-4 h-4" />
+                          )}
                         </button>
                       </div>
                     </td>

@@ -18,6 +18,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { usePermissions } from '@/hooks/permissions/usePermissions';
 import { useAuthStore } from '@/lib/auth-store';
+import { bluHealthApi3rdParty } from '@/lib/api';
 
 // Delete Confirmation Modal Component with Theme Support
 const DeleteConfirmModal = ({ hospital, onConfirm, onCancel }) => {
@@ -241,36 +242,29 @@ export default function AllHospitalsAttachedCurrentLab() {
 
     // Fetch hospitals
     const fetchHospitals = async () => {
-        if (!tenant?.id) {
+     // 1. Better check: Ensure tenant and tenant.id exist
+        if (!tenant || !tenant.id) {
+            console.warn("Fetch hospitals aborted: tenant.id is missing.");
             setLoading(false);
             setError('No lab tenant found. Please log in again.'); 
             return;
         }
 
+
         try {
             setLoading(true);
             setError(null);
 
-            const endpoint = `https://bluhealthapi.bluai.ai/api/bluhealth/labs/${tenant.id}/hospitals`;
+            const response = await bluHealthApi3rdParty.getHospitalsByLab(tenant.id);
 
-            const response = await fetch(endpoint, {
-                method: 'GET',
-            });
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+            if (response?.data?.data.data?.hospitals) {
 
-            const hospitalData = await response.json();
-
-            if (hospitalData?.data?.hospitals) {
-    
-                // Hospitals set करें
-                const hospitalsData = hospitalData.data.hospitals || [];
+                const hospitalsData = response.data?.data.data?.hospitals || [];
                 setHospitals(hospitalsData);
                 setPagination({
-                    total: hospitalData.data.total_hospitals || hospitalsData.length,
-                    totalPages: Math.ceil((hospitalData.data.total_hospitals || hospitalsData.length) / 10),
+                    total: response.data?.data.data?.total_hospitals || hospitalsData.length,
+                    totalPages: Math.ceil((response.data.total_hospitals || hospitalsData.length) / 10),
                     currentPage: page
                 });
             } else {
@@ -408,7 +402,7 @@ export default function AllHospitalsAttachedCurrentLab() {
                                         <td className="px-6 py-4">
                                             <button
                                                 // onClick={() => handleViewDetails(hospital)}
-                                                onClick={()=>router.push(`/dashboard/hospitals/tests?hospitalId=${hospital.hospital_id}`)}
+                                                onClick={() => router.push(`/dashboard/hospitals/tests?hospitalId=${hospital.hospital_id}`)}
 
                                                 className="font-medium text-gray-900 dark:text-white hover:text-[#1b4dff] dark:hover:text-[#1b4dff] transition text-left"
                                             >
